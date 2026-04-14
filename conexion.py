@@ -9,7 +9,6 @@ import sys
 from tkinter import  messagebox 
 # import history_xlsx
 
-
 # Connect to MariaDB Platform
 try:
     conn = mariadb.connect(
@@ -17,10 +16,8 @@ try:
         password="u8ch9Xn4Ol8woLw3E2A6",
         host="127.0.0.1",
         port=3306,
-        database="data_tracking_qwert"
+        database="data_tracking_qwert")
 
-    )
-        
 except mariadb.Error as e:
     # print(f"Error connecting to MariaDB Platform: {e}")
     messagebox.showerror(title="Connection", message=f"Check database connection", )
@@ -28,7 +25,151 @@ except mariadb.Error as e:
 
 # Get Cursor
 # cur = conn.cursor()
+def insert_attribute(name, unit, upper, lower, value, create_registration):
+    cursor = conn.cursor()
 
+    sql = """
+        INSERT INTO attribute 
+        (name, unit, upper_limit, lower_limit, value_expected, create_registration)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """
+
+    cursor.execute(sql, (name, unit, upper, lower, value, create_registration))
+    conn.commit()
+
+    attribute_id = cursor.lastrowid
+    cursor.close()
+
+    return attribute_id
+def select_attributes():
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT attribute_id, name, unit, upper_limit, lower_limit, value_expected
+        FROM attribute
+    """)
+    data = cursor.fetchall()
+    cursor.close()
+    return data
+
+def update_attribute(attribute_id, name, unit, upper, lower, value):
+    cursor = conn.cursor()
+    sql = """
+        UPDATE attribute
+        SET name=?, unit=?, upper_limit=?, lower_limit=?, value_expected=?
+        WHERE attribute_id=?
+    """
+    cursor.execute(sql, (name, unit, upper, lower, value, attribute_id))
+    conn.commit()
+    cursor.close()
+
+def delete_attribute(attribute_id):
+    cursor = conn.cursor()
+    sql = "DELETE FROM attribute WHERE attribute_id=?"
+    cursor.execute(sql, (attribute_id,))
+    conn.commit()
+    cursor.close()
+
+def insert_program(name, description, create_registration):
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO programs (name, description, create_registration) VALUES (%s, %s, %s)",
+        (name, description, create_registration)
+    )
+    conn.commit()
+    program_id = cursor.lastrowid
+    cursor.close()
+    return program_id
+
+def update_program(program_id, name, description):
+    cursor = conn.cursor()
+    sql = """
+        UPDATE programs
+        SET name = ?, description = ?
+        WHERE programs_id = ?
+    """
+    cursor.execute(sql, (name, description, program_id))
+    conn.commit()
+    cursor.close()  
+
+def delete_program(program_id):
+    cursor = conn.cursor()
+    sql = "DELETE FROM programs WHERE programs_id = ?"
+    cursor.execute(sql, (program_id,))
+    conn.commit()
+    cursor.close()
+
+def select_programs():
+    cursor = conn.cursor()
+    cursor.execute("SELECT programs_id, name, description FROM programs")
+    data = cursor.fetchall()
+    cursor.close()
+    return data
+
+#ATTRIBUTES
+
+def select_attributes():
+    cursor = conn.cursor()
+    cursor.execute("SELECT attribute_id, name, unit, upper_limit, lower_limit, value_expected, user_id, create_registration FROM attribute")
+    data = cursor.fetchall()
+    cursor.close()
+    return data
+
+def insert_attribute(name, unit, upper_limit, lower_limit, value_expected, create_registration):
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO attribute (name, unit, upper_limit, lower_limit, value_expected,  create_registration) VALUES (%s, %s, %s, %s, %s, %s)",
+        (name, unit, upper_limit, lower_limit, value_expected, create_registration)
+    )
+    conn.commit()
+    attribute_id = cursor.lastrowid
+    cursor.close()
+    return attribute_id
+
+def update_attribute(attribute_id, name, unit, upper_limit, lower_limit, value_expected):
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "UPDATE attribute SET name=%s, unit=%s, upper_limit=%s, lower_limit=%s, value_expected=%s WHERE attribute_id=%s",
+        (name, unit, upper_limit, lower_limit, value_expected, attribute_id)
+    )
+
+    conn.commit()
+    cursor.close()
+def delete_attribute(attribute_id):
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM attribute WHERE attribute_id=%s", (attribute_id,))
+    conn.commit()
+    cursor.close()
+    
+#TYPE_TEST //////////////// SE DEBE DEFINIR LA BASE DE DATOS Y CAMBIARLA //////////////////
+
+def select_type_test():
+    cursor = conn.cursor()
+    cursor.execute("SELECT test_type_id, name, status_id FROM test_type")
+    data = cursor.fetchall()
+    cursor.close()
+    return data
+
+def insert_type_test(name, status_id, user_id, create_registration):
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO test_type (name, status_id, user_id, create_registration) VALUES (%s, %s, %s, %s)",
+        (name, status_id, user_id, create_registration)
+    )
+    conn.commit()
+    test_type_id = cursor.lastrowid
+    cursor.close()
+    return test_type_id
+
+def update_type_test(test_type_id, name, status_id):
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE test_type SET name=%s, status_id=%s WHERE test_type_id=%s",
+        (name, status_id, test_type_id)
+    )
+    conn.commit()
+    cursor.close()
+    
 def server_connection():
     try:
         with conn.cursor() as cursor:
@@ -38,8 +179,7 @@ def server_connection():
     except Exception as e:
         # print(f"[ERROR] server_connection(): {e}")
         return []
-
-
+    
 def new_model(model):
     project = []
     models = []
@@ -66,7 +206,6 @@ def new_model(model):
 
     if not models:
         raise ValueError("No models found after insertion")
-
     return models[0]  
 
 def model():
@@ -80,7 +219,7 @@ def model():
         if not project:
             # print("No hay proyecto activo.")
             return None, None, None
-
+        
         project_id = project[0]
 
         # --- Obtener modelo activo ---
@@ -123,8 +262,7 @@ def model():
     except mariadb.Error as e:
         # print(f"Error en consulta SQL: {e}")
         return None, None, None
-
-
+    
 def piece_store(numPiece):
     try:
         # Obtener proyecto activo
