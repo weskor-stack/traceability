@@ -791,172 +791,157 @@ def worker(conn, addr):
                         for item in option:
                             cadena += str(item) + ","
 
-                        if len(entry_piece.get()) == 0:
-                            # print("Cadena vacia")
-                            safe_insert("Command received-> "+cadena+"\n"+": The part has not been loaded"+"\n"+"Command FAILED"+"\n", "red")
-                            logging.info(f"Command received-> {cadena}\n The part has not been loaded\n Command FAILED")
-                            try:
-                                conn.send("FAILED".encode('UTF-8'))
-                            except Exception as e:
-                                safe_insert(f"Error enviando: {e}", "red")
-                            conexionBitacora.event("CMD-C001","|Command received| "+cadena+": The part has not been loaded",month,day)
-                            conexionBitacora.event("CMD-F001","|Command,FAILED|",month,day)
-
-                            green_label.configure(image=image_green)
-                            red_label.configure(image=image_red_full)
-
-                            cadena = ""
-                            pieza = ""
+                        part_name = entry_piece.get()
                                         
-                        else:
-                            part_name = entry_piece.get()
-                                        
-                            if len(option) == 5 and option[-1] == '1/':
-                                            
-                                duration = conexion.duration(cadena,part_name)
+                        if len(option) == 6 and option[-1] == '1/':
+                            duration = conexion.duration(cadena,option[4])
 
-                                if duration == "PASSED":
-                                    # entry_piece.configure(state="readonly", textvariable=piece_name)
-                                    # piece_name.set("")
-                                    safe_insert("Command received-> "+cadena+"\n"+"Command END PROCESS PASSED"+"\n")
+                            if duration == "PASSED":
+                                # entry_piece.configure(state="readonly", textvariable=piece_name)
+                                # piece_name.set("")
+                                safe_insert("Command received-> "+cadena+"\n"+"Command END PROCESS PASSED"+"\n")
+                                try:
+                                    conn.send("PASSED".encode('UTF-8'))
+                                except Exception as e:
+                                    safe_insert(f"Error enviando: {e}", "red")
+
+
+                                # Obtener formatos habilitados
+                                enabled_formats = conexion.get_enabled_export_formats()
+                                # safe_insert(f"Supported formats: {', '.join(enabled_formats) if enabled_formats else 'None'}\n")
+
+                                # Variables para resultados
+                                json_result = None
+                                csv_result = None
+                                xml_result = None
+                                any_file_created = False
+                                errors = []
+
+                                # Generar archivos según formatos habilitados
+                                if 'JSON' in enabled_formats:
+                                    print("Generating JSON file...")
                                     try:
-                                        conn.send("PASSED".encode('UTF-8'))
-                                    except Exception as e:
-                                        safe_insert(f"Error enviando: {e}", "red")
-
-
-                                    # Obtener formatos habilitados
-                                    enabled_formats = conexion.get_enabled_export_formats()
-                                    # safe_insert(f"Supported formats: {', '.join(enabled_formats) if enabled_formats else 'None'}\n")
-
-                                    # Variables para resultados
-                                    json_result = None
-                                    csv_result = None
-                                    xml_result = None
-                                    any_file_created = False
-                                    errors = []
-
-                                    # Generar archivos según formatos habilitados
-                                    if 'JSON' in enabled_formats:
-                                        try:
-                                            file_json = data_json.json_file()
-                                            json_result = file_json
-                                            if file_json == "PASSED":
-                                                any_file_created = True
-                                                # safe_insert("✓ JSON file successfully generated\n")
-                                            else:
-                                                errors.append(f"JSON: {file_json}")
-                                                safe_insert(f"✗ JSON Error: {file_json}\n", "red")
-                                        except Exception as e:
-                                            errors.append(f"JSON: {str(e)}")
-                                            safe_insert(f"✗ JSON Exception: {str(e)}\n", "red")
-                                    
-                                    if 'CSV' in enabled_formats:
-                                        try:
-                                            # Importar aquí para evitar dependencia si no está habilitado
-                                            import data_csv_60
-                                            file_csv = data_csv_60.csv_file()
-                                            csv_result = file_csv
-                                            if file_csv == "PASSED":
-                                                any_file_created = True
-                                                # safe_insert("✓ CSV file successfully generated\n")
-                                            else:
-                                                errors.append(f"CSV: {file_csv}")
-                                                safe_insert(f"✗ CSV Error: {file_csv}\n", "red")
-                                        except ImportError:
-                                            errors.append("CSV: Módulo no encontrado")
-                                            safe_insert("✗ CSV module not available\n", "red")
-                                        except Exception as e:
-                                            errors.append(f"CSV: {str(e)}")
-                                            safe_insert(f"✗ CSV Exception: {str(e)}\n", "red")
-                                    
-                                    if 'XML' in enabled_formats:
-                                        try:
-                                            # Importar aquí para evitar dependencia si no está habilitado
-                                            import data_xml
-                                            file_xml = data_xml.xml_file()
-                                            xml_result = file_xml
-                                            if file_xml == "PASSED":
-                                                any_file_created = True
-                                                # safe_insert("✓ XML file successfully generated\n")
-                                            else:
-                                                errors.append(f"XML: {file_xml}")
-                                                safe_insert(f"✗ XML Error: {file_xml}\n", "red")
-                                        except ImportError:
-                                            errors.append("XML: Módulo no encontrado")
-                                            safe_insert("✗ XML module not available\n", "red")
-                                        except Exception as e:
-                                            errors.append(f"XML: {str(e)}")
-                                            safe_insert(f"✗ XML Exception: {str(e)}\n", "red")
-                                    
-                                    # Verificar resultados
-                                    if not enabled_formats:
-                                        safe_insert("⚠ No export formats enabled\n", "orange")
-                                        conexionBitacora.event("ENDP-003", "|No export formats enabled|", month, day)
-                                        conexionBitacora.event("CMD-P001", "|Command,PASSED|", month, day)
-                                        green_label.configure(image=image_green_full)
-                                        red_label.configure(image=image_red)
-                                    
-                                    elif errors:
-                                        # Hubo errores en algunos formatos
-                                        error_message = "; ".join(errors)
-                                        safe_insert(f"⚠ Some files were not generated: {error_message}\n", "orange")
-                                        
-                                        if any_file_created:
-                                            # Al menos un archivo se creó exitosamente
-                                            safe_insert("✓ At least one file was successfully generated\n")
-                                            conexionBitacora.event("ENDP-004", f"|Partial export| {error_message}", month, day)
-                                            conexionBitacora.event("CMD-P001", "|Command,PASSED|", month, day)
-                                            green_label.configure(image=image_green_full)
-                                            red_label.configure(image=image_red)
+                                        file_json = data_json.json_file(option[4])
+                                        json_result = file_json
+                                        if file_json == "PASSED":
+                                            any_file_created = True
+                                            # safe_insert("✓ JSON file successfully generated\n")
                                         else:
-                                            # Ningún archivo se creó
-                                            safe_insert("✗ No file could be generated\n", "red")
-                                            try:
-                                                conn.send("FAILED".encode('UTF-8'))
-                                            except Exception as e:
-                                                safe_insert(f"Error enviando: {e}", "red")
-                                            
-                                            conexionBitacora.event("ENDP-002", f"|No files created| {error_message}", month, day)
-                                            conexionBitacora.event("CMD-F001", "|Command,FAILED|", month, day)
-                                            green_label.configure(image=image_green)
-                                            red_label.configure(image=image_red_full)
+                                            errors.append(f"JSON: {file_json}")
+                                            safe_insert(f"✗ JSON Error: {file_json}\n", "red")
+                                    except Exception as e:
+                                        errors.append(f"JSON: {str(e)}")
+                                        print(errors)
+                                        safe_insert(f"✗ JSON Exception: {str(e)}\n", "red")
                                     
-                                    else:
-                                        # Todos los formatos habilitados se generaron exitosamente
-                                        # safe_insert("✓ All files were successfully generated\n")
-                                        conexionBitacora.event("ENDP-001", "|Command received| " + cadena, month, day)
+                                if 'CSV' in enabled_formats:
+                                    try:
+                                        # Importar aquí para evitar dependencia si no está habilitado
+                                        import data_csv_60
+                                        file_csv = data_csv_60.csv_file()
+                                        csv_result = file_csv
+                                        if file_csv == "PASSED":
+                                            any_file_created = True
+                                            # safe_insert("✓ CSV file successfully generated\n")
+                                        else:
+                                            errors.append(f"CSV: {file_csv}")
+                                            safe_insert(f"✗ CSV Error: {file_csv}\n", "red")
+                                    except ImportError:
+                                        errors.append("CSV: Módulo no encontrado")
+                                        safe_insert("✗ CSV module not available\n", "red")
+                                    except Exception as e:
+                                        errors.append(f"CSV: {str(e)}")
+                                        safe_insert(f"✗ CSV Exception: {str(e)}\n", "red")
+                                    
+                                if 'XML' in enabled_formats:
+                                    try:
+                                        # Importar aquí para evitar dependencia si no está habilitado
+                                        import data_xml
+                                        file_xml = data_xml.xml_file()
+                                        xml_result = file_xml
+                                        if file_xml == "PASSED":
+                                            any_file_created = True
+                                            # safe_insert("✓ XML file successfully generated\n")
+                                        else:
+                                            errors.append(f"XML: {file_xml}")
+                                            safe_insert(f"✗ XML Error: {file_xml}\n", "red")
+                                    except ImportError:
+                                        errors.append("XML: Módulo no encontrado")
+                                        safe_insert("✗ XML module not available\n", "red")
+                                    except Exception as e:
+                                        errors.append(f"XML: {str(e)}")
+                                        safe_insert(f"✗ XML Exception: {str(e)}\n", "red")
+                                    
+                                # Verificar resultados
+                                if not enabled_formats:
+                                    safe_insert("⚠ No export formats enabled\n", "orange")
+                                    conexionBitacora.event("ENDP-003", "|No export formats enabled|", month, day)
+                                    conexionBitacora.event("CMD-P001", "|Command,PASSED|", month, day)
+                                    green_label.configure(image=image_green_full)
+                                    red_label.configure(image=image_red)
+                                    
+                                elif errors:
+                                    # Hubo errores en algunos formatos
+                                    error_message = "; ".join(errors)
+                                    safe_insert(f"⚠ Some files were not generated: {error_message}\n", "orange")
+                                    
+                                    if any_file_created:
+                                        # Al menos un archivo se creó exitosamente
+                                        safe_insert("✓ At least one file was successfully generated\n")
+                                        conexionBitacora.event("ENDP-004", f"|Partial export| {error_message}", month, day)
                                         conexionBitacora.event("CMD-P001", "|Command,PASSED|", month, day)
                                         green_label.configure(image=image_green_full)
                                         red_label.configure(image=image_red)
-                                        
+                                    else:
+                                        # Ningún archivo se creó
+                                        safe_insert("✗ No file could be generated\n", "red")
+                                        try:
+                                            conn.send("FAILED".encode('UTF-8'))
+                                        except Exception as e:
+                                            safe_insert(f"Error enviando: {e}", "red")
+                                            
+                                        conexionBitacora.event("ENDP-002", f"|No files created| {error_message}", month, day)
+                                        conexionBitacora.event("CMD-F001", "|Command,FAILED|", month, day)
+                                        green_label.configure(image=image_green)
+                                        red_label.configure(image=image_red_full)
+                                
                                 else:
-                                    try:
-                                        conn.send("FAILED".encode('UTF-8'))
-                                    except Exception as e:
-                                        safe_insert(f"Error enviando: {e}", "red")
-                                    safe_insert("Command received-> "+cadena+"\n"+"Command FAILED"+"\n","red")
-                                    conexionBitacora.event("ENDP-002","|Command received| "+cadena,month,day)
-                                    conexionBitacora.event("CMD-F001","|Command,FAILED|",month,day)
-
-                                    green_label.configure(image=image_green)
-                                    red_label.configure(image=image_red_full)
+                                    # Todos los formatos habilitados se generaron exitosamente
+                                    # safe_insert("✓ All files were successfully generated\n")
+                                    conexionBitacora.event("ENDP-001", "|Command received| " + cadena, month, day)
+                                    conexionBitacora.event("CMD-P001", "|Command,PASSED|", month, day)
+                                    green_label.configure(image=image_green_full)
+                                    red_label.configure(image=image_red)
+                                        
                             else:
                                 try:
                                     conn.send("FAILED".encode('UTF-8'))
                                 except Exception as e:
                                     safe_insert(f"Error enviando: {e}", "red")
                                 safe_insert("Command received-> "+cadena+"\n"+"Command FAILED"+"\n","red")
-
                                 conexionBitacora.event("ENDP-002","|Command received| "+cadena,month,day)
                                 conexionBitacora.event("CMD-F001","|Command,FAILED|",month,day)
 
                                 green_label.configure(image=image_green)
                                 red_label.configure(image=image_red_full)
+                        else:
+                            try:
+                                conn.send("FAILED".encode('UTF-8'))
+                            except Exception as e:
+                                safe_insert(f"Error enviando: {e}", "red")
+                            safe_insert("Command received-> "+cadena+"\n"+"Command FAILED"+"\n","red")
+
+                            conexionBitacora.event("ENDP-002","|Command received| "+cadena,month,day)
+                            conexionBitacora.event("CMD-F001","|Command,FAILED|",month,day)
+
+                            green_label.configure(image=image_green)
+                            red_label.configure(image=image_red_full)
                                     
                         cadena = ""
                         pieza = ""
+                            
                     case "new_model":
+                        clear_table_data()
                         if len(option) == 3 and option[-1] == '1/':
                             new_models = conexion.new_model(option[1])
                                     
@@ -991,6 +976,7 @@ def worker(conn, addr):
                         cadena = ""
                         pieza = ""
                     case "select_model":
+                        clear_table_data()
                         if len(option) == 3 and option[-1] == '1/':
                             modelName = conexion.select_model(option[1])
 
@@ -1038,6 +1024,7 @@ def worker(conn, addr):
                         cadena = ""
                         pieza = ""
                     case "commit":
+                        clear_table_data()
                         cadena = ""
                         for item in option:
                             cadena += str(item) + ","
@@ -1068,7 +1055,6 @@ def worker(conn, addr):
                                         conn.send("PASSED".encode('UTF-8'))
                                     except Exception as e:
                                         safe_insert(f"Error enviando: {e}", "red")
-                                    part = conexion.pieces()
                                     
                                     conexionBitacora.event("COM-001","|Command received| "+cadena,month,day)
                                     conexionBitacora.event("CMD-P001","|Command,PASSED|",month,day)
@@ -1115,7 +1101,7 @@ def worker(conn, addr):
                         # Limpiar tabla al cambiar componente
                         clear_table_data()
                         
-                        if len(option) == 2 and option[-1] == '1/':
+                        if len(option) == 4 and option[-1] == '1/':
                             entry_piece.configure(state=ctk.NORMAL, textvariable=piece_name)
                             piece_name.set("")
                             safe_insert("You can scan the part.", "green")
@@ -1154,7 +1140,11 @@ def worker(conn, addr):
                                         entry_piece.configure(state="readonly", textvariable=piece_name)
                                         piece_name.set(name_piece)
                                                     
-                                        conexion.component_store(name_piece)
+                                        componente = conexion.component_store(name_piece, option[1], option[2])
+                                        if componente == "FAILED":
+                                            safe_insert("Error storing component in database, verify the string", "red")
+                                            logging.error("Error storing component in database")
+                                            break
                                         safe_insert("Command received-> "+cadena+" actuator: "+name_piece+"\n"+"Command COMPONENT PASSED"+"\n")
                                             
                                         conexionBitacora.event("SPP-001","|Command received| "+cadena+" actuator: "+name_piece,month,day)
@@ -1207,7 +1197,7 @@ def worker(conn, addr):
                                 safe_insert("Connection was closed"+"\n"+f"Error: {str(e)}"+"\n"+"Contact technical support!", "red")
                                 cadena = ""
                         
-                        elif len(option) == 3 and option[-1] == '1/':
+                        elif len(option) == 5 and option[-1] == '1/':
                             entry_piece.configure(state=ctk.NORMAL, textvariable=piece_name)
                             piece_name.set("")
                             # safe_insert("You can scan the part.", "green")
@@ -1226,7 +1216,11 @@ def worker(conn, addr):
                                 entry_piece.configure(state="readonly", textvariable=piece_name)
                                 piece_name.set(name_piece)
                                                     
-                                conexion.component_store(name_piece)
+                                componente = conexion.component_store(name_piece, option[2], option[3])
+                                if componente == "FAILED":
+                                    safe_insert("Error storing component in database, verify the string", "red")
+                                    logging.error("Error storing component in database")
+                                    break
                                 safe_insert("Command received-> "+cadena+" actuator: "+name_piece+"\n"+"Command COMPONENT PASSED")
                                     
                                 conexionBitacora.event("SPP-001","|Command received| "+cadena+" actuator: "+name_piece,month,day)
@@ -1261,6 +1255,7 @@ def worker(conn, addr):
                                                 
                                 break
                         else:
+                            conn.send("FAILED".encode('UTF-8'))
                             safe_insert("Command received-> "+cadena+"\n"+"Command FAILED", "red")
 
                             conexionBitacora.event("SPP-002","|Command received| "+cadena,month,day)
@@ -1270,6 +1265,16 @@ def worker(conn, addr):
                             red_label.configure(image=image_red_full)
 
                             cadena = ""
+
+                    case "laser":
+                        
+                        serial = conexion.get_part_numbers('P2173404-00-C:SEYU26061A0765')
+                        if serial != "PASSED":
+                            conn.send(f"{serial}".encode('UTF-8'))
+                            safe_insert(f"Command received-> {cadena} part: {serial}\nCommand PASSED\nPrinting...\n", "green")
+                        else:
+                            conn.send("do_not_print".encode('UTF-8'))
+                            safe_insert(f"Command received-> {cadena} part: {serial}\nCommand PASSED\nDon't print\n", "orange")
                     case _:
                         safe_insert("Command received-> "+cadena+"\n"+"Command FAILED"+"\n", "red")
                         try:

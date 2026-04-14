@@ -18,8 +18,8 @@ last_digit = last_digit.split('-')
 timer2 = rfc3339.rfc3339(tasktimestamp, utc=True, use_system_timezone=False)+" "+last_digit[3]
 
 ####################################################################################################
-def json_file():
-    
+def json_file(parte):
+    print(parte)
     action = "completetask"
     tasktimestamp = datetime.now(timezone.utc).astimezone()#"2024-04-02T10:00:32Z 18:46:54"
     last_digit = str(tasktimestamp)
@@ -43,7 +43,7 @@ def json_file():
     
     type_station = station[4]
 
-    name = conexion.pieces()
+    name = conexion.pieces(parte)
     piece_id = name[0]
     duration = conexion.duration_json(station[0], piece_id)
     name = name[1]
@@ -159,9 +159,11 @@ def json_file():
     #         )
 
     if type_station == 4:
+        print(f"La pieza es {piece_id}")
         parameters = []
         resultado = ""
         screwing = conexion.screwing_data(piece_id)
+        print(f"Los datos de screwing son {screwing}")
         for x in screwing:
             if x[0] == 1:
                 indice +=1
@@ -175,7 +177,7 @@ def json_file():
                 indice4 +=1
                 indice = indice4
 
-            if x[6] == "1":
+            if x[6] == "PASSED":
                 resultado = "Passed"
             else:
                 resultado = "Failed"
@@ -212,7 +214,7 @@ def json_file():
                 indice3 +=1
                 indice = indice3
 
-            if x[6] == "1":
+            if x[6] == "PASSED":
                 resultado = "Passed"
             else:
                 resultado = "Failed"
@@ -258,7 +260,7 @@ def json_file():
                 indice6 +=1
                 indice = indice6
             
-            if x[6] == "1":
+            if x[6] == "PASSED":
                 resultado = "Passed"
             else:
                 resultado = "Failed"
@@ -297,7 +299,7 @@ def json_file():
                 indice4 += 1
                 indice = indice4
 
-            if x[6] == "1":
+            if x[6] == "PASSED":
                 resultado = "Passed"
             else:
                 resultado = "Failed"
@@ -327,7 +329,7 @@ def json_file():
             timer = rfc3339.rfc3339(tiempo, utc=True, use_system_timezone=False) + " " + last_digit[3]
             indice +=1
             
-            if x[6] == "1":
+            if x[6] == "PASSED":
                 resultado = "Passed"
             else:
                 resultado = "Failed"

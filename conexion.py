@@ -291,7 +291,7 @@ def piece_store(numPiece):
 
         # Insertar nueva pieza
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO part (part_number, model_id, status_id) VALUES (?, ?, ?)", (numPiece, model[0], 1))
+        cursor.execute("INSERT INTO part (part_number, model_id, status_id) VALUES (?, ?, ?)", (numPiece, model[0], 3))
         conn.commit()
         cursor.close()
 
@@ -381,11 +381,11 @@ def parameters_pressfit(element, name_piece):
 
         # Obtener parte activa
         cur.execute(
-            "SELECT part_id, part_number, model_id FROM part WHERE status_id = 1 AND part_number = %s",(name_piece,)
+            "SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,)
         )
         part = cur.fetchone()
         if not part:
-            return "Part not found"
+            return "FAILED"
 
         value = element[1]
         low_limit = element[2]
@@ -455,12 +455,13 @@ def parameters_screwing(element, name_piece):
 
         # Obtener part_id
         cursor = conn.cursor()
-        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 1 AND part_number = %s",(name_piece,))
+        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,))
         part = cursor.fetchone()
         cursor.close()
 
         if not part:
-            raise ValueError("Parte no encontrada: " + name_piece)
+            # raise ValueError("Parte no encontrada: " + name_piece)
+            return "FAILED"
 
         # Datos para inserción
         value, low_limit, high_limit, data_type, units, result, metadata = element[1:8]
@@ -491,7 +492,7 @@ def parameters_screwing(element, name_piece):
 
     except mariadb.Error as e:
         print(f"[DB ERROR] {e}")
-        return "FAILED"
+        return f"[DB ERROR] {e}"
     except Exception as e:
         print(f"[GENERAL_ERROR] {e}")
         return "GENERAL_ERROR"
@@ -540,7 +541,7 @@ def parameters_inspection_vs(element, name_piece):
 
         # Obtener part
         cursor = conn.cursor()
-        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 1 AND part_number = %s",(name_piece,))
+        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,))
         part = cursor.fetchone()
         cursor.close()
 
@@ -630,7 +631,7 @@ def parameters_inspection_xt(element, name_piece):
 
         # Obtener part
         cursor = conn.cursor()
-        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 1 AND part_number = %s",(name_piece,))
+        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,))
         part = cursor.fetchone()
         cursor.close()
 
@@ -718,7 +719,7 @@ def parameters_electrical(element, name_piece):
 
         # Obtener parte
         cursor = conn.cursor()
-        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 1 AND part_number = %s",(name_piece,))
+        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,))
         part = cursor.fetchone()
         cursor.close()
 
@@ -789,7 +790,7 @@ def duration(element, name_piece):
 
         # Obtener parte activa
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id FROM part WHERE status_id = 1")
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s", (name_piece,))
             part = cursor.fetchone()
             if not part:
                 # print("[ERROR] Pieza no encontrada")
@@ -804,6 +805,18 @@ def duration(element, name_piece):
             cursor.execute(sql, val)
             conn.commit()
 
+        # Desactivar piezas anteriores
+        cursor = conn.cursor()
+        cursor.execute("UPDATE part SET status_id = ? WHERE status_id = ? AND part_number = ?", (2, 3, name_piece))
+        conn.commit()
+        cursor.close()
+
+        # Eliminar pieza de la tabla serial_number
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM serial_number WHERE data = ?", (name_piece,))
+        conn.commit()
+        cursor.close()
+
         # Registrar en historial
         # num_piece = [""] * 13 + [taskresult, tasktimestamp, taskduration, metadata]
         # history_xlsx.history_file_xlsx(num_piece)
@@ -815,10 +828,10 @@ def duration(element, name_piece):
         return "FAILED"
 
 #################################################### Consultas para el archivo JSON ##############################################
-def pieces():
+def pieces(parte):
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 1 LIMIT 1")
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 2 AND part_number = %s LIMIT 1",(parte,))
             part = cursor.fetchone()
             if not part:
                 return None  # O podrías lanzar una excepción si prefieres
@@ -905,8 +918,8 @@ def screwing_data(part_id):
                 INNER JOIN data_tracking.screwing_measurement 
                     ON screwing_measurement.screwing_measurement_id = parameters_screwing.screwing_measurement_id
                 WHERE part_id = %s
-                ORDER BY parameters_screwing_id DESC
-                LIMIT 9
+                ORDER BY parameters_screwing_id ASC
+                
             ''', (part_id,))
             return cursor.fetchall()
     except Exception as e:
@@ -1401,16 +1414,11 @@ def electrical_data2(part_id):
         electricalJson.close()
 
 ########################################################## REGISTRO DE COMPONENTES ####################################################
-def component_store(component_name):
+def component_store(component_name,descripcion,parte):
     try:
         # --- Obtener part activo ---
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT part_id 
-            FROM part 
-            WHERE status_id = 1 
-            LIMIT 1
-        """)
+        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 1 AND part_number = %s",(parte,))
         part = cursor.fetchone()
         cursor.close()
 
@@ -1423,10 +1431,10 @@ def component_store(component_name):
         # --- Insertar componente ---
         cursor = conn.cursor()
         sql = """
-            INSERT INTO component (part_id, component_name)
-            VALUES (?, ?)
+            INSERT INTO component (part_id, component_name, description)
+            VALUES (?, ?, ?)
         """
-        cursor.execute(sql, (part_id, component_name))
+        cursor.execute(sql, (part_id, component_name, descripcion))
         conn.commit()
         cursor.close()
 
@@ -1441,6 +1449,8 @@ def component_store(component_name):
 
 def parameters_continuity(element):
     import evaluation
+
+    print(element)
     
     # Preparar evaluación
     evaluacion = [element[7], element[3], element[4]]
@@ -1467,12 +1477,7 @@ def parameters_continuity(element):
 
         # Obtener part activo
         with conn.cursor() as cursor:
-            cursor.execute("""
-                SELECT part_id 
-                FROM part 
-                WHERE status_id = 1 
-                LIMIT 1
-            """)
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(element[9],))
             part = cursor.fetchone()
         
         if not part:
@@ -1552,12 +1557,7 @@ def parameters_leak(element):
 
         # Obtener part activo
         with conn.cursor() as cursor:
-            cursor.execute("""
-                SELECT part_id 
-                FROM part 
-                WHERE status_id = 1 
-                LIMIT 1
-            """)
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(element[10],))
             part = cursor.fetchone()
         
         if not part:
@@ -1629,12 +1629,7 @@ def parameters_temperature(element):
 
         # Obtener part activo
         with conn.cursor() as cursor:
-            cursor.execute("""
-                SELECT part_id 
-                FROM part 
-                WHERE status_id = 1 
-                LIMIT 1
-            """)
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(element[10],))
             part = cursor.fetchone()
         
         if not part:
@@ -1706,12 +1701,7 @@ def parameters_welding(element):
 
         # Obtener part activo
         with conn.cursor() as cursor:
-            cursor.execute("""
-                SELECT part_id 
-                FROM part 
-                WHERE status_id = 1 
-                LIMIT 1
-            """)
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(element[8],))
             part = cursor.fetchone()
         
         if not part:
@@ -2106,6 +2096,36 @@ def export_to_xml(data):
         print(f"[ERROR] export_to_xml(): {e}")
         return False
 
+################################################################# Números de series ###########################################################################
+
+def get_part_numbers(numero):
+    
+    # Obtener part_id
+    cursor = conn.cursor()
+    cursor.execute("SELECT serial_number_id, data FROM serial_number WHERE status_serial_number_id = 2 AND data = %s",(numero,))
+    part = cursor.fetchone()
+    cursor.close()
+
+    if not part:
+        cur = conn.cursor()
+        sql = '''
+            INSERT INTO serial_number
+            (data, status_serial_number_id)
+            VALUES (%s, %s)
+        '''
+        vals = (numero, 2)
+
+        try:
+            cur.execute(sql, vals)
+            conn.commit()
+        except Exception as e:
+            print("Error inserting pressfit parameter:", e)
+            return "FAILED"
+        
+        return numero
+    
+    return "PASSED"
+    
 
 #################################################################################################################
 # name = "P1895152-00-G:SHG2242791000290"
