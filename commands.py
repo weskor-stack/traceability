@@ -13,14 +13,14 @@ inspection_vs = "commit,Inspection,VS,M,8000,7500,8500,Numeric,N,PASSED,Comentar
 inspection_xt = "commit,Inspection,XT,PX,500,475,525,Numeric,mm,PASSED,Comentarios,PY,500,475,525,Numeric,mm,PASSED,Comentarios,CPC,400,395,405,Numeric,mm,PASSED,Comentarios,CPE,400,395,405,Numeric,mm,PASSED,Comentarios,CAD,1,1,1,Boolean,DBU,PASSED,Comentarios,P2173404-00-C:SEYU26061A0765,1/"
 electrical = "commit,Electrical,Ct,1.25,1,1.8,Numeric,N,OK,Comentario,V,31250,2900,3500,Numeric,degrees,FAILED,Comentario,Cr,50,47,55,Numeric,mm,PASSED,Comentario,R,150,140,160,Numeric,mm,PASSED,Comentario,P2173404-00-C:SEYU26061A0765,1/"
 
-continuity_ok = 'commit,Continuity,Continuity1,10,50,F,PASS,20,Ejemplo de error del defecto,1/'
+continuity_ok = 'commit,Continuity,Continuity1,10,50,F,PASS,20,Ejemplo de error del defecto,P2173404-00-C:SEYU26061A0765,1/'
 
 continuity_fail = 'commit,Continuity,Continuity1,10,50,F,FAIL,5,Ejemplo de error del defecto,1/'
 
 leak1 = "commit,Leak,tiempo_prueba,resultado,PASSED/FAILED,unit,descripcion,extra1,extra2,1/"
-leak2 = "commit,Leak,Numeric,14.25,1,psi,0,1.0,1.0,Leak,1/"
-temperatura = "commit,Temperature,start (timestamp),salida al proceso (timestamp),temp_inicial,temp_final,unit,descripcion,extra1,extra2,1/"
-welding = 'commit,Welding,welding_time,welding_power,100,mm,PASSED,description,1/'
+leak2 = "commit,Leak,Numeric,14.25,PASSED,psi,DESCRIPCION,1.0,1.0,Leak,P2173404-00-C:SEYU26061A0765,1/"
+temperatura = "commit,Temperature,start (timestamp),salida al proceso (timestamp),temp_inicial,temp_final,unit,descripcion,extra1,extra2,P2173404-00-C:SEYU26061A0765,1/"
+welding = 'commit,Welding,welding_time,welding_power,100,mm,PASSED,description,P2173404-00-C:SEYU26061A0765,1/'
 
 cadenas = temperatura.split(',')
 # print(len(cadenas))
@@ -66,38 +66,47 @@ def commit(cadena, name_piece):
 
                 if force[0] == 'F' and distance[0] == 'D' and speed[0] == 'S':
                     force_measurement = conexion.parameters_pressfit(force,options[-3])
-                    data_for_table.append([
-                        "Force",  # Measurement
-                        force[1],  # Value
-                        force[2],  # Lower limit
-                        force[3],  # Upper limit
-                        force[4],  # Type
-                        force[5],  # Unit
-                        result
-                        # force[8]   # Result
-                    ])
+                    if force_measurement != 'GENERAL_ERROR' and force_measurement != 'FAILED':
+                        data_for_table.append([
+                            "Force",  # Measurement
+                            force[1],  # Value
+                            force[2],  # Lower limit
+                            force[3],  # Upper limit
+                            force[4],  # Type
+                            force[5],  # Unit
+                            result
+                            # force[8]   # Result
+                        ])
+                    elif force_measurement == 'FAILED':
+                        return "FAILED", []
                     distance_measurement = conexion.parameters_pressfit(distance,options[-3])
-                    data_for_table.append([
-                       "Distance",  # Measurement
-                        distance[1],  # Value
-                        distance[2],  # Lower limit
-                        distance[3],  # Upper limit
-                        distance[4],  # Type
-                        distance[5],  # Unit
-                        result_distance
-                        # distance[8]   # Result
-                    ])
+                    if distance_measurement != 'GENERAL_ERROR' and distance_measurement != 'FAILED':
+                        data_for_table.append([
+                        "Distance",  # Measurement
+                            distance[1],  # Value
+                            distance[2],  # Lower limit
+                            distance[3],  # Upper limit
+                            distance[4],  # Type
+                            distance[5],  # Unit
+                            result_distance
+                            # distance[8]   # Result
+                        ])
+                    elif distance_measurement == 'FAILED':
+                        return "FAILED", []
                     speed_measurement = conexion.parameters_pressfit(speed,options[-3])
-                    data_for_table.append([
-                        "Speed",  # Measurement
-                        speed[1],  # Value
-                        speed[2],  # Lower limit
-                        speed[3],  # Upper limit
-                        speed[4],  # Type
-                        speed[5],  # Unit
-                        result_speed
-                        # speed[8]   # Result
-                    ])
+                    if speed_measurement != 'GENERAL_ERROR' and speed_measurement != 'FAILED':
+                        data_for_table.append([
+                            "Speed",  # Measurement
+                            speed[1],  # Value
+                            speed[2],  # Lower limit
+                            speed[3],  # Upper limit
+                            speed[4],  # Type
+                            speed[5],  # Unit
+                            result_speed
+                            # speed[8]   # Result
+                        ])
+                    elif speed_measurement == 'FAILED':
+                        return "FAILED", []
                         
                     return "PASSED", data_for_table
                 else:
@@ -149,7 +158,7 @@ def commit(cadena, name_piece):
 
                 if torque[0] == 'T' and angle[0] == 'A' and px[0] == 'PX' and py[0] == 'PY':
                     torque_measurement = conexion.parameters_screwing(torque,options[-3])
-                    if torque_measurement != 'GENERAL_ERROR':
+                    if torque_measurement != 'GENERAL_ERROR' and torque_measurement != 'FAILED':
                         data_for_table.append([
                             torque[0],# "Torque",  # Measurement
                             torque[1],  # Value
@@ -160,10 +169,12 @@ def commit(cadena, name_piece):
                             result_torque
                             # torque[8]   # Result
                         ])
+                    elif torque_measurement == 'FAILED':
+                        return "FAILED", []
                     angle_measurement = conexion.parameters_screwing(angle,options[-3])
-                    if angle_measurement != 'GENERAL_ERROR':
+                    if angle_measurement != 'GENERAL_ERROR' and angle_measurement != 'FAILED':
                         data_for_table.append([
-                            "Angle",  # Measurement
+                            angle[0],  # Measurement
                             angle[1],  # Value
                             angle[2],  # Lower limit
                             angle[3],  # Upper limit
@@ -172,10 +183,12 @@ def commit(cadena, name_piece):
                             result_angle
                             # angle[8]   # Result
                         ])
+                    elif angle_measurement == 'FAILED':
+                        return "FAILED", []
                     px_measurement = conexion.parameters_screwing(px,options[-3])
-                    if px_measurement != 'GENERAL_ERROR':
+                    if px_measurement != 'GENERAL_ERROR' and px_measurement != 'FAILED':
                         data_for_table.append([
-                            "Position x",  # Measurement
+                            px[0],  # Measurement
                             px[1],  # Value
                             px[2],  # Lower limit
                             px[3],  # Upper limit
@@ -184,10 +197,12 @@ def commit(cadena, name_piece):
                             result_spx
                             # px[8]   # Result
                         ])
+                    elif px_measurement == 'FAILED':
+                        return "FAILED", []
                     py_measurement = conexion.parameters_screwing(py,options[-3])
-                    if py_measurement != 'GENERAL_ERROR':
+                    if py_measurement != 'GENERAL_ERROR' and py_measurement != 'FAILED':
                         data_for_table.append([
-                            "Position y",  # Measurement
+                            py[0],  # Measurement
                             py[1],  # Value
                             py[2],  # Lower limit
                             py[3],  # Upper limit
@@ -196,6 +211,8 @@ def commit(cadena, name_piece):
                             result_spy
                             # py[8]   # Result
                         ])
+                    elif py_measurement == 'FAILED':
+                        return "FAILED", []
 
                     return "PASSED", data_for_table
                 else:
@@ -257,7 +274,7 @@ def commit(cadena, name_piece):
 
 
                         measurementInspection = conexion.parameters_inspection_vs(measurement,options[-3])
-                        if measurementInspection != 'GENERAL_ERROR':
+                        if measurementInspection != 'GENERAL_ERROR' and measurementInspection != 'FAILED':
                             data_for_table.append([
                                 position_x[4],  # Measurement
                                 position_x[1],  # Value
@@ -267,8 +284,10 @@ def commit(cadena, name_piece):
                                 position_x[5],  # Unit
                                 result_ipx
                             ])
+                        elif measurementInspection == 'FAILED':
+                            return "FAILED", []
                         positionPx = conexion.parameters_inspection_vs(position_x,options[-3])
-                        if positionPx != 'GENERAL_ERROR':
+                        if positionPx != 'GENERAL_ERROR' and positionPx != 'FAILED':
                             data_for_table.append([
                                 position_x[4],  # Measurement
                                 position_x[1],  # Value
@@ -278,8 +297,10 @@ def commit(cadena, name_piece):
                                 position_x[5],  # Unit
                                 result_ipx
                             ])
+                        elif positionPx == 'FAILED':
+                            return "FAILED", []
                         positionPy = conexion.parameters_inspection_vs(position_y,options[-3])
-                        if positionPy != 'GENERAL_ERROR':
+                        if positionPy != 'GENERAL_ERROR' and positionPy != 'FAILED':
                             data_for_table.append([
                                 position_y[4],  # Measurement
                                 position_y[1],  # Value
@@ -289,7 +310,9 @@ def commit(cadena, name_piece):
                                 position_y[5],  # Unit
                                 result_ipy
                             ])
-
+                        elif positionPy == 'FAILED':
+                            return "FAILED", []
+                        
                         return "PASSED", data_for_table
 
                         # if(measurementInspection == "FAILED" or positionPx == "FAILED" or positionPy == "FAILED"):
@@ -374,7 +397,7 @@ def commit(cadena, name_piece):
 
 
                         positionPxT = conexion.parameters_inspection_xt(position_x2,options[-3])
-                        if positionPxT != 'GENERAL_ERROR':
+                        if positionPxT != 'GENERAL_ERROR' and positionPxT != 'FAILED':
                             data_for_table.append([
                                 position_x2[0],  # Measurement
                                 position_x2[1],  # Value
@@ -384,8 +407,10 @@ def commit(cadena, name_piece):
                                 position_x2[5],  # Unit
                                 result_ipx
                             ])
+                        elif positionPxT == 'FAILED':
+                            return "FAILED", []
                         positionPyT = conexion.parameters_inspection_xt(position_y2,options[-3])
-                        if positionPyT != 'GENERAL_ERROR':
+                        if positionPyT != 'GENERAL_ERROR' and positionPyT != 'FAILED':
                             data_for_table.append([
                                 position_y2[0],  # Measurement
                                 position_y2[1],  # Value
@@ -395,8 +420,10 @@ def commit(cadena, name_piece):
                                 position_y2[5],  # Unit
                                 result_ipy
                             ])
+                        elif positionPyT == 'FAILED':
+                            return "FAILED", []
                         cpcT = conexion.parameters_inspection_xt(cpc,options[-3])
-                        if cpcT != 'GENERAL_ERROR':
+                        if cpcT != 'GENERAL_ERROR' and cpcT != 'FAILED':
                             data_for_table.append([
                                 cpc[0],
                                 cpc[1],  # Value
@@ -406,8 +433,10 @@ def commit(cadena, name_piece):
                                 cpc[5],  # Unit
                                 result_cpc
                             ])
+                        elif cpcT == 'FAILED':  
+                            return "FAILED", []
                         cpeT = conexion.parameters_inspection_xt(cpe,options[-3])
-                        if cpeT != 'GENERAL_ERROR':
+                        if cpeT != 'GENERAL_ERROR' and cpeT != 'FAILED':
                             data_for_table.append([
                                 cpe[0],
                                 cpe[1],  # Value
@@ -417,8 +446,10 @@ def commit(cadena, name_piece):
                                 cpe[5],  # Unit
                                 result_cpe
                             ])
+                        elif cpeT == 'FAILED':
+                            return "FAILED", []
                         cadT = conexion.parameters_inspection_xt(cad,options[-3])
-                        if cadT != 'GENERAL_ERROR':
+                        if cadT != 'GENERAL_ERROR' and cadT != 'FAILED':
                             data_for_table.append([
                                 cad[0],  # Measurement
                                 cad[1],  # Value
@@ -428,6 +459,8 @@ def commit(cadena, name_piece):
                                 cad[5],  # Unit
                                 result_cad
                             ])
+                        elif cadT == 'FAILED':
+                            return "FAILED", []
 
                         return "PASSED", data_for_table
                     
@@ -481,7 +514,7 @@ def commit(cadena, name_piece):
 
                 if continuidad[0] == 'Ct' and voltaje[0] == 'V' and corriente[0] == 'Cr' and resistencia[0] == 'R':
                     continuidad_measurement = conexion.parameters_electrical(continuidad,options[-3])
-                    if continuidad_measurement != 'GENERAL_ERROR':
+                    if continuidad_measurement != 'GENERAL_ERROR' and continuidad_measurement != 'FAILED':
                         data_for_table.append([
                             "Voltage",  # Measurement
                             continuidad[1],  # Value
@@ -491,6 +524,8 @@ def commit(cadena, name_piece):
                             continuidad[5],  # Unit
                             result_electrical_continuity
                         ])
+                    elif continuidad_measurement == 'FAILED':
+                        return "FAILED", []
                     voltaje_measurement = conexion.parameters_electrical(voltaje,options[-3])
                     if voltaje_measurement != 'GENERAL_ERROR':
                         data_for_table.append([
@@ -503,7 +538,7 @@ def commit(cadena, name_piece):
                             result_voltage
                         ])
                     corriente_measurement = conexion.parameters_electrical(corriente,options[-3])
-                    if corriente_measurement != 'GENERAL_ERROR':
+                    if corriente_measurement != 'GENERAL_ERROR' and corriente_measurement != 'FAILED':
                         data_for_table.append([
                             "Voltage",  # Measurement
                             corriente[1],  # Value
@@ -513,8 +548,10 @@ def commit(cadena, name_piece):
                             corriente[5],  # Unit
                             result_current
                         ])
+                    elif corriente_measurement == 'FAILED':
+                        return "FAILED", []
                     resistencia_measurement = conexion.parameters_electrical(resistencia,options[-3])
-                    if resistencia_measurement != 'GENERAL_ERROR':
+                    if resistencia_measurement != 'GENERAL_ERROR' and resistencia_measurement != 'FAILED':
                         data_for_table.append([
                             "Voltage",  # Measurement
                             resistencia[1],  # Value
@@ -524,7 +561,8 @@ def commit(cadena, name_piece):
                             resistencia[5],  # Unit
                             result_resistance
                         ])
-
+                    elif resistencia_measurement == 'FAILED':
+                        return "FAILED", []
 
                     return "PASSED",data_for_table
                 else:
@@ -532,89 +570,102 @@ def commit(cadena, name_piece):
             else:
                 return "FAILED",[]
         case "Continuity":
-            if len(options) == 11:
+            if len(options) == 12:
                 result_continuity = ""
 
-                if options[6] =='1':
+                if options[6] =='PASSED':
                     result_continuity = "PASS"
                 else:
                     result_continuity = "FAIL"
 
                 commits = conexion.parameters_continuity(options)
-                data_for_table.append([
-                    "Continuity",  # Measurement
-                    options[7],  # Value
-                    options[3],  # Lower limit
-                    options[4],  # Upper limit
-                    options[8],  # Type
-                    options[5],  # Unit
-                    result_continuity
-                ])
+                if commits == 'FAILED':
+                    return "FAILED", []
+                else:
+                    data_for_table.append([
+                        options[1],  # Measurement
+                        options[7],  # Value
+                        options[3],  # Lower limit
+                        options[4],  # Upper limit
+                        options[8],  # Type
+                        options[5],  # Unit
+                        result_continuity
+                    ])
                 return "PASSED",data_for_table
             else:
                 return "FAILED" ,[]
         case "Leak":    
             # print(options)        
-            if len(options) == 12:
+            if len(options) == 13:
                 result_leak = ""
 
-                if options[4] =='1':
+                if options[4] =='PASSED':
                     result_leak = "PASS"
                 else:
                     result_leak = "FAIL"
                 commits = conexion.parameters_leak(options)
-                data_for_table.append([
-                    options[9],  # Measurement
-                    options[3],  # Value
-                    options[7],  # Lower limit
-                    options[8],  # Upper limit
-                    options[2],  # tiempo_prueba
-                    options[5],  # Fuga
-                    result_leak
-                ])
+                if commits == 'FAILED':
+                    return "FAILED", []
+                else:
+                    data_for_table.append([
+                        options[9],  # Measurement
+                        options[3],  # Value
+                        options[7],  # Lower limit
+                        options[8],  # Upper limit
+                        options[2],  # tiempo_prueba
+                        options[5],  # Fuga
+                        result_leak
+                    ])
                 return "PASSED",data_for_table
             else:
                 return "FAILED",[]
         case "Temperature":
-            if len(options) == 12:
+            if len(options) == 13:
                 result_temperatura = ""
 
-                if options[8] =='1':
+                if options[8] =='PASSED':
                     result_temperatura = "PASS"
                 else:
                     result_temperatura = "FAIL"
+
                 commits = conexion.parameters_temperature(options)
-                data_for_table.append([
-                    options[1],  # Measurement
-                    options[2],  # Value
-                    options[3],  # Lower limit
-                    options[4],  # Upper limit
-                    options[5],  # Type
-                    options[6],  # Unit
-                    result_temperatura
-                ])
+                if commits == 'FAILED':
+                    return "FAILED", []
+                else:
+                    data_for_table.append([
+                        options[1],  # Measurement
+                        options[2],  # Value
+                        options[3],  # Lower limit
+                        options[4],  # Upper limit
+                        options[5],  # Type
+                        options[6],  # Unit
+                        result_temperatura
+                    ])
                 return "PASSED",data_for_table
             else:
                 return "FAILED",[]
         case "Welding":
             welding = 'commit,Welding,welding_time,welding_power,100,mm,PASSED,description,1/'
-            if len(options) == 10:
+            if len(options) == 11:
                 result_welding = ""
 
-                if options[6] =='1':
+                if options[6] =='PASSED':
                     result_welding = "PASS"
                 else:
                     result_welding = "FAIL"
                 commits = conexion.parameters_welding(options)
-                data_for_table.append([
-                    options[1],  # Measurement
-                    options[2],  # Value
-                    options[3],  # Lower limit
-                    options[4],  # Upper limit
-                    "-",  # Type
-                    options[5],  # Unit
-                    result_welding
-                ])
+                if commits == 'FAILED':
+                    return "FAILED", []
+                else:
+                    data_for_table.append([
+                        options[1],  # Measurement
+                        options[2],  # Value
+                        options[3],  # Lower limit
+                        options[4],  # Upper limit
+                        "-",  # Type
+                        options[5],  # Unit
+                        result_welding
+                    ])
                 return "PASSED",data_for_table
             else:
                 return "FAILED",[]
