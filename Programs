@@ -96,19 +96,17 @@ class FormularioProgramas:
         program_id = conexion.insert_program(
         datos["Name"],
         datos["Description"],
-        datos["User_id"],
         datos["Create_registration"]
     )
 
         if program_id:
             datos["Program_id"] = program_id
             item = self.tabla.insert("", "end", values=(datos["Name"], datos["Description"]))
-            self.data[item] = datos 
+            self.data[item] = datos
             self.ajustar_columnas()
             print(f"Registro agregado con ID: {program_id}")
         else:
             print("Error: No se pudo obtener el ID de la base de datos")
-
     def actualizar(self, item, datos):
         program_id = self.data[item]["Program_id"]  
         conexion.update_program(program_id, datos["Name"], datos["Description"])
@@ -179,11 +177,10 @@ class VentanaPrograma:
     def guardar(self):
         descripcion = self.desc_text.get("1.0", "end").strip()
         datos = {
-            "Name": self.name.get(),
-            "Description": descripcion,
-            "User_id": 1,
-            "Create_registration": "2026-01-01 00:00:00"
-        }
+        "Name": self.name.get(),
+        "Description": descripcion,
+        "Create_registration": "2026-01-01 00:00:00"
+    }
 
         if self.modo == "Agregar":
             self.principal.agregar(datos)

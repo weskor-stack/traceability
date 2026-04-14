@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 import conexion
+import importlib
+importlib.reload(conexion)
 from datetime import datetime
 
 class FormularioPrincipal:
@@ -14,61 +16,30 @@ class FormularioPrincipal:
         # ====== ESTILO TABLA ======
         style = ttk.Style()
         style.theme_use("default")
-        style.configure(
-            "Treeview.Heading",
-            font=("Segoe UI", 10, "bold"),
-            relief="flat"
-        )
-        style.configure(
-            "Treeview",
-            rowheight=30,
-            font=("Segoe UI", 10),
-            borderwidth=1,
-            relief="solid"
-        )
-        style.map(
-            "Treeview",
-            background=[("selected", "#757575")]
-        )
+        style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"), relief="flat")
+        style.configure("Treeview", rowheight=30, font=("Segoe UI", 10), borderwidth=1, relief="solid")
+        style.map("Treeview", background=[("selected", "#757575")])
 
         # ====== BOTONES ======
         frame_botones = tk.Frame(root)
         frame_botones.pack(pady=10)
 
-        tk.Button(
-            frame_botones,
-            text="Agregar",
-            font=("Segoe UI Emoji", 10),
-            bg="#1D8A21",
-            fg="white",
-            width=12,
-            command=self.abrir_agregar
-        ).grid(row=0, column=0, padx=5)
+        tk.Button(frame_botones, text="Agregar", font=("Segoe UI Emoji", 10),
+                  bg="#1D8A21", fg="white", width=12,
+                  command=self.abrir_agregar).grid(row=0, column=0, padx=5)
 
-        tk.Button(
-            frame_botones,
-            text="Actualizar",
-            font=("Segoe UI Emoji", 10),
-            bg="#105FA0",
-            fg="white",
-            width=12,
-            command=self.abrir_actualizar
-        ).grid(row=0, column=1, padx=5)
+        tk.Button(frame_botones, text="Actualizar", font=("Segoe UI Emoji", 10),
+                  bg="#105FA0", fg="white", width=12,
+                  command=self.abrir_actualizar).grid(row=0, column=1, padx=5)
 
-        tk.Button(
-            frame_botones,
-            text="Eliminar",
-            font=("Segoe UI Emoji", 10),
-            bg="#f44336",
-            fg="white",
-            width=12,
-            command=self.eliminar
-        ).grid(row=0, column=2, padx=5)
+        tk.Button(frame_botones, text="Eliminar", font=("Segoe UI Emoji", 10),
+                  bg="#f44336", fg="white", width=12,
+                  command=self.eliminar).grid(row=0, column=2, padx=5)
 
         # ====== TABLA ======
         self.tabla = ttk.Treeview(
             root,
-            columns=("Nombre", "Lower", "Upper", "Value", "User"),
+            columns=("Nombre", "Lower", "Upper", "Value"),
             show="headings",
             selectmode="browse"
         )
@@ -77,19 +48,15 @@ class FormularioPrincipal:
         self.tabla.heading("Lower", text="Lower-limit")
         self.tabla.heading("Upper", text="Upper-limit")
         self.tabla.heading("Value", text="Value_expected")
-        self.tabla.heading("User", text="User_id")
         self.tabla.column("Nombre", width=180)
         self.tabla.column("Lower", width=120, anchor="center")
         self.tabla.column("Upper", width=120, anchor="center")
         self.tabla.column("Value", width=150, anchor="center")
-        self.tabla.column("User", width=120, anchor="center")
         self.tabla.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Filas alternadas
         self.tabla.tag_configure("par", background="#f9f9f9")
         self.tabla.tag_configure("impar", background="#ffffff")
 
-        # Cargar datos al final cuando tabla y data ya existen
         self.cargar_datos()
 
     # ====== CARGAR DATOS ======
@@ -106,17 +73,15 @@ class FormularioPrincipal:
                 registro[4],  # lower_limit
                 registro[3],  # upper_limit
                 registro[5],  # value_expected
-                registro[6],  # user_id
             ), tags=(tag,))
 
             self.data[item] = {
-                "attribute_id":       registro[0],
-                "name":               registro[1],
-                "unit":               registro[2],
-                "upper_limit":        registro[3],
-                "lower_limit":        registro[4],
-                "value_expected":     registro[5],
-                "user_id":            registro[6],
+                "attribute_id":        registro[0],
+                "name":                registro[1],
+                "unit":                registro[2],
+                "upper_limit":         registro[3],
+                "lower_limit":         registro[4],
+                "value_expected":      registro[5],
                 "create_registration": registro[7],
             }
 
@@ -140,7 +105,6 @@ class FormularioPrincipal:
             datos["upper_limit"],
             datos["lower_limit"],
             datos["value_expected"],
-            datos["user_id"],
             datos["create_registration"]
         )
 
@@ -154,13 +118,12 @@ class FormularioPrincipal:
             datos["lower_limit"],
             datos["upper_limit"],
             datos["value_expected"],
-            datos["user_id"],
         ), tags=(tag,))
 
         self.data[item] = datos
 
     def actualizar_datos(self, item, datos):
-        attribute_id = self.data[item]["attribute_id"]  # Rescatar id antes de sobreescribir
+        attribute_id = self.data[item]["attribute_id"]
 
         conexion.update_attribute(
             attribute_id,
@@ -169,7 +132,6 @@ class FormularioPrincipal:
             datos["upper_limit"],
             datos["lower_limit"],
             datos["value_expected"],
-            datos["user_id"]
         )
 
         self.tabla.item(item, values=(
@@ -177,10 +139,9 @@ class FormularioPrincipal:
             datos["lower_limit"],
             datos["upper_limit"],
             datos["value_expected"],
-            datos["user_id"],
         ))
 
-        datos["attribute_id"] = attribute_id  # Reinyectar id
+        datos["attribute_id"] = attribute_id
         self.data[item] = datos
 
     def eliminar(self):
@@ -212,7 +173,7 @@ class VentanaFormulario:
         self.item = item
         self.ventana = tk.Toplevel()
         self.ventana.title(f" {modo} Registro")
-        self.ventana.geometry("350x380")
+        self.ventana.geometry("350x320")
         self.ventana.iconbitmap("favicon.ico")
 
         # Variables
@@ -221,7 +182,6 @@ class VentanaFormulario:
         self.lower = tk.StringVar()
         self.upper = tk.StringVar()
         self.value = tk.StringVar()
-        self.user = tk.StringVar()
 
         # Cargar datos si es actualizar
         if datos:
@@ -230,7 +190,6 @@ class VentanaFormulario:
             self.lower.set(datos["lower_limit"])
             self.upper.set(datos["upper_limit"])
             self.value.set(datos["value_expected"])
-            self.user.set(datos["user_id"])
 
         # Campos
         tk.Label(self.ventana, text="Nombre").pack(pady=2)
@@ -243,27 +202,18 @@ class VentanaFormulario:
         tk.Entry(self.ventana, textvariable=self.upper).pack()
         tk.Label(self.ventana, text="Value_expected").pack(pady=2)
         tk.Entry(self.ventana, textvariable=self.value).pack()
-        tk.Label(self.ventana, text="User_id").pack(pady=2)
-        tk.Entry(self.ventana, textvariable=self.user).pack()
 
-        tk.Button(
-            self.ventana,
-            text=" Guardar",
-            font=("Segoe UI Emoji", 10),
-            bg="#228F26",
-            fg="white",
-            width=15,
-            command=self.guardar
-        ).pack(pady=15)
+        tk.Button(self.ventana, text=" Guardar", font=("Segoe UI Emoji", 10),
+                  bg="#228F26", fg="white", width=15,
+                  command=self.guardar).pack(pady=15)
 
     def guardar(self):
         datos = {
-            "name":               self.nombre.get(),
-            "unit":               self.unit.get(),
-            "upper_limit":        self.upper.get(),
-            "lower_limit":        self.lower.get(),
-            "value_expected":     self.value.get(),
-            "user_id":            self.user.get(),
+            "name":                self.nombre.get(),
+            "unit":                self.unit.get(),
+            "upper_limit":         self.upper.get(),
+            "lower_limit":         self.lower.get(),
+            "value_expected":      self.value.get(),
             "create_registration": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
@@ -274,7 +224,9 @@ class VentanaFormulario:
 
         self.ventana.destroy()
 
+
 # ===== MAIN =====
-root = tk.Tk()
-app = FormularioPrincipal(root)
-root.mainloop()
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = FormularioPrincipal(root)
+    root.mainloop()

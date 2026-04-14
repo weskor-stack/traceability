@@ -25,20 +25,22 @@ except mariadb.Error as e:
 
 # Get Cursor
 # cur = conn.cursor()
-def insert_attribute(name, unit, upper, lower, value, user_id, fecha):
+def insert_attribute(name, unit, upper, lower, value, create_registration):
     cursor = conn.cursor()
 
     sql = """
         INSERT INTO attribute 
-        (name, unit, upper_limit, lower_limit, value_expected, user_id, create_registration)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (name, unit, upper_limit, lower_limit, value_expected, create_registration)
+        VALUES (?, ?, ?, ?, ?, ?)
     """
-    cursor.execute(sql, (name, unit, upper, lower, value, user_id, fecha))
+
+    cursor.execute(sql, (name, unit, upper, lower, value, create_registration))
     conn.commit()
+
     attribute_id = cursor.lastrowid
     cursor.close()
-    return attribute_id
 
+    return attribute_id
 def select_attributes():
     cursor = conn.cursor()
     cursor.execute("""
@@ -67,13 +69,12 @@ def delete_attribute(attribute_id):
     conn.commit()
     cursor.close()
 
-def insert_program(name, description, user_id, fecha):
+def insert_program(name, description, create_registration):
     cursor = conn.cursor()
-    sql = """
-        INSERT INTO programs (name, description, user_id, create_registration)
-        VALUES (?, ?, ?, ?)
-    """
-    cursor.execute(sql, (name, description, user_id, fecha))
+    cursor.execute(
+        "INSERT INTO programs (name, description, create_registration) VALUES (%s, %s, %s)",
+        (name, description, create_registration)
+    )
     conn.commit()
     program_id = cursor.lastrowid
     cursor.close()
@@ -113,26 +114,27 @@ def select_attributes():
     cursor.close()
     return data
 
-def insert_attribute(name, unit, upper_limit, lower_limit, value_expected, user_id, create_registration):
+def insert_attribute(name, unit, upper_limit, lower_limit, value_expected, create_registration):
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO attribute (name, unit, upper_limit, lower_limit, value_expected, user_id, create_registration) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-        (name, unit, upper_limit, lower_limit, value_expected, user_id, create_registration)
+        "INSERT INTO attribute (name, unit, upper_limit, lower_limit, value_expected,  create_registration) VALUES (%s, %s, %s, %s, %s, %s)",
+        (name, unit, upper_limit, lower_limit, value_expected, create_registration)
     )
     conn.commit()
     attribute_id = cursor.lastrowid
     cursor.close()
     return attribute_id
 
-def update_attribute(attribute_id, name, unit, upper_limit, lower_limit, value_expected, user_id):
+def update_attribute(attribute_id, name, unit, upper_limit, lower_limit, value_expected):
     cursor = conn.cursor()
+
     cursor.execute(
-        "UPDATE attribute SET name=%s, unit=%s, upper_limit=%s, lower_limit=%s, value_expected=%s, user_id=%s WHERE attribute_id=%s",
-        (name, unit, upper_limit, lower_limit, value_expected, user_id, attribute_id)
+        "UPDATE attribute SET name=%s, unit=%s, upper_limit=%s, lower_limit=%s, value_expected=%s WHERE attribute_id=%s",
+        (name, unit, upper_limit, lower_limit, value_expected, attribute_id)
     )
+
     conn.commit()
     cursor.close()
-
 def delete_attribute(attribute_id):
     cursor = conn.cursor()
     cursor.execute("DELETE FROM attribute WHERE attribute_id=%s", (attribute_id,))
