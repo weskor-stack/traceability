@@ -24,6 +24,9 @@ import time
 import platform
 import logging
 import traceback
+import Programs
+import Attributes
+import Type_test
 
 def configurar_logging():
     """Configura el sistema de logging"""
@@ -191,7 +194,6 @@ entry_station.pack(side=ctk.LEFT, pady=10, padx=0, anchor='nw')
 
 lbl_model = ctk.CTkLabel(master=frame, text='Model:')
 lbl_model.pack(side=ctk.LEFT, pady=10, padx=50, anchor='n')
-
 entry_model = ctk.CTkEntry(master=frame, width=300, justify="center", state="readonly", textvariable=model_name)
 entry_model.pack(side=ctk.LEFT, pady=10, padx=0, anchor='n')
         
