@@ -4,6 +4,7 @@ __license__ = "AUTOMATYCO"
 __version__ = "v2.0.0"
 
 # Module Imports
+from datetime import datetime
 import mariadb
 import sys
 from tkinter import  messagebox 
@@ -28,6 +29,71 @@ except mariadb.Error as e:
 
 # Get Cursor
 # cur = conn.cursor()
+def obtener_datos_por_proceso(nombre_proceso):
+    try:
+        cursor = conn.cursor()
+        query = """
+            SELECT machine_id, operator, station 
+            FROM configurador 
+            WHERE process_name = ? 
+            LIMIT 1
+        """
+        cursor.execute(query, (nombre_proceso,))
+        resultado = cursor.fetchone()
+        return resultado
+    except Exception as e:
+        print(f"Error en la consulta: {e}")
+        return None
+
+def insert_simple(machine, process, operator, station):
+    cursor = conn.cursor()
+
+    sql = """
+        INSERT INTO configurador
+        (machine_id, process_name, operator, station, create_registration)
+        VALUES (?, ?, ?, ?, ?)
+    """
+    cursor.execute(sql, (machine, process, operator, station, datetime.now()))
+    conn.commit()
+    cursor.close()
+
+def select_distinct(column):
+    cursor = conn.cursor()
+
+    query = f"""SELECT DISTINCT {column} FROM configurador
+    WHERE  {column} IS NOT NULL AND {column} != ''"""
+    cursor.execute(query)
+    data = [row[0] for row in cursor.fetchall()]
+    cursor.close()
+    return data
+
+    query = f"""SELECT DISTINCT {column} FROM configurador""" 
+def insert_configurador(machine_id, process_name, operator, station, fecha):
+    cursor = conn.cursor()
+
+    sql = """
+        INSERT INTO configurador
+        (machine_id, process_name, operator, station, create_registration)
+        VALUES (?, ?, ?, ?, ?)
+    """
+
+    cursor.execute(sql, (machine_id, process_name, operator, station, fecha))
+    conn.commit()
+    cursor.close()
+
+def select_configurador():
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT configurador_id, machine_id, process_name, operator, station
+        FROM configurador
+        ORDER BY configurador_id DESC
+        LIMIT 1
+    """)
+
+    data = cursor.fetchone()
+    cursor.close()
+    return data
 
 def server_connection():
     try:
