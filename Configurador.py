@@ -5,7 +5,6 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 import conexion
 
-# --- CONSTANTES ---
 BG_DARK    = "#FFFFFF"
 BG_PANEL   = "#F3F3F3"
 BG_ENTRY   = "#DBCDCD"
@@ -33,7 +32,6 @@ class ConfiguradorUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Configurador")
-        # Se reduce el alto inicial para evitar el vacío
         self.root.geometry("560x440") 
         self.root.configure(bg=BG_DARK)
         apply_dark_theme()
@@ -51,12 +49,10 @@ class ConfiguradorUI:
         tk.Label(header, text="⚙ CONFIGURADOR", font=FONT_HEAD, bg=BG_DARK, fg=FG_WHITE).pack(side="left")
         tk.Frame(self.root, bg=ACCENT, height=2).pack(fill="x", padx=24, pady=(8, 0))
 
-        # Panel Principal (Quitamos expand=True)
+        # Panel Principal 
         panel = tk.Frame(self.root, bg=BG_PANEL, highlightthickness=1, highlightbackground=BORDER)
         panel.pack(fill="x", padx=24, pady=16, expand=False)
-        
         inner = tk.Frame(panel, bg=BG_PANEL)
-        # Quitamos expand=True aquí también para que el contenido no flote
         inner.pack(fill="x", padx=20, pady=16, expand=False)
 
         # STATION
@@ -96,15 +92,13 @@ class ConfiguradorUI:
         tk.Button(btn_frame, text="▶ GUARDAR", command=self.guardar, bg=ACCENT, font=FONT_BTN, relief="flat", cursor="hand2").pack(side="left", ipadx=15)
         tk.Button(btn_frame, text="↺ LIMPIAR", command=self.limpiar, bg=BG_ENTRY, font=FONT_BTN, relief="flat", cursor="hand2").pack(side="left", padx=(10, 0), ipadx=15)
 
-        # Barra de estado (Se mantiene al final pero sin espacio blanco forzado arriba)
+        # Barra de estado
         self.status_var = tk.StringVar(value="Listo")
         status_bar = tk.Label(self.root, textvariable=self.status_var, font=FONT_LABEL, bg=BG_DARK, fg=FG_MUTED)
         status_bar.pack(side="bottom", anchor="w", padx=24, pady=8)
 
     def _on_station_change(self, event):
-        seleccion = self.station.get()
-        
-        # Limpiar rejilla de campos dinámicos
+        seleccion = self.station.get()    
         self.lbl_shop.grid_forget()
         self.shop_order.grid_forget()
         self.lbl_products.grid_forget()
