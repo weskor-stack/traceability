@@ -6,10 +6,10 @@ from CTkMessagebox import CTkMessagebox
 import customtkinter as ctk
 from PIL import Image
 from CustomTkinterMessagebox import *
-from tkinter import StringVar, messagebox 
+from tkinter import StringVar, Tk, messagebox 
 import tkinter.messagebox as tkmsg
 from CTkTable import *
-# PC name
+#PC name
 import get_name_PC
 # MySQL conexión
 import conexion
@@ -25,24 +25,15 @@ import platform
 import logging
 import traceback
 import Attributes
-import Type_test
+#import Type_test
+import Configurador
 
 def configurar_logging():
     """Configura el sistema de logging"""
-    
-    # Crear directorio logs si no existe
     os.makedirs("logs", exist_ok=True)
-    
-    # Nombre del archivo de log con fecha
     log_filename = f"logs/server_{datetime.now().strftime('%Y%m%d')}.log"
-    
-    # Obtener logger root
-    logger = logging.getLogger()
-    
-    # Limpiar handlers existentes
-    logger.handlers.clear()
-    
-    # Configurar nivel
+    logger = logging.getLogger() 
+    logger.handlers.clear()  
     logger.setLevel(logging.DEBUG)
     
     # Crear formatter
@@ -85,9 +76,7 @@ def configurar_logging():
     # Forzar flush
     for handler in logger.handlers:
         handler.flush()
-    
     return logger
-
 logger = configurar_logging()
 
 
@@ -134,9 +123,23 @@ root.iconbitmap("favicon.ico")
 root.grid_columnconfigure((0, 1), weight=1)
 root.grid_rowconfigure(0, weight=1)
 
+def abrir_configurador():
+    try:
+        ventana = ctk.CTkToplevel(root)
+        ventana.title("Configurador")   
+        try:
+            ventana.iconbitmap("favicon.ico")
+        except:
+            pass 
+        ventana.attributes("-topmost", True)
+        from Configurador import ConfiguradorUI
+        app_config = ConfiguradorUI(ventana)
+        
+    except Exception as e:
+        print(f"Error al abrir el configurador: {e}")
+
 def safe_exit():
     global running, current_operator, config_data, login_window, logout_window
-
     print("Cerrando aplicación...")
     logging.info(f"Cerrando aplicación...")
 
@@ -184,6 +187,14 @@ piece_name = StringVar()
 # Crear frame principal
 frame = ctk.CTkFrame(master=root)
 frame.pack(pady=30, padx=60, fill="both", expand=True)
+button_config = ctk.CTkButton(
+    master=frame, 
+    text="Config ⚙", 
+    width=80, 
+    fg_color="#3580b3", 
+    hover_color="#555555",
+    command=abrir_configurador
+)
 
 lbl_station = ctk.CTkLabel(master=frame, text='Station:')
 lbl_station.pack(side=ctk.LEFT, pady=10, padx=40, anchor='nw')
@@ -219,15 +230,15 @@ entry_piece.place(x=500, y=60)
 texto = ctk.CTkTextbox(master=frame, height=230, width=700, state="disabled")
 texto.place(x=50, y=150)
 font=ctk.CTkFont(family='Arial', size=16)
-
+                
 lbl_comand = ctk.CTkLabel(master=frame, text='Command:')
-
 
 lbl_comand.place(x=780, y=150)
 # Load the image 
 image_green = ctk.CTkImage(light_image=Image.open('verde.png'),
                                     dark_image=Image.open('verde.png'),
                                     size=(30, 30))
+
 image_red = ctk.CTkImage(light_image=Image.open('rojo.png'),
                                     dark_image=Image.open('rojo.png'),
                                     size=(30, 30))
@@ -299,13 +310,13 @@ amc_label.place(x=1120, y=610)
 
 
 label_user = ctk.CTkLabel(master=frame, text="User:")
-label_user.place(x=1050, y=250)
+label_user.place(x=1050, y=300)
 
 label_users = ctk.CTkLabel(master=frame, text="Admin")
-label_users.place(x=1090, y=250)
+label_users.place(x=1050, y=320)
 
 headers = [["Measurement","Value","Lower limit","Upper limit","Type","Unit","Result"]]
-
+button_config.place(x=1050, y=200)
 # table = CTkTable(master=frame, row=8, column=7, header_color="#1f618d", values= headers)
 # table.pack(expand=False, fill="both", padx=10, pady=10)
 # table.configure(width=150)
@@ -314,6 +325,7 @@ headers = [["Measurement","Value","Lower limit","Upper limit","Type","Unit","Res
 ########################################################
 # CLASE PARA MANEJO SEGURO DE LA TABLA
 ########################################################
+
 class SafeTableManager:
     """Versión simplificada con scrollbar automático"""
     def __init__(self, master_frame, x=50, y=390, width=900, height=300):

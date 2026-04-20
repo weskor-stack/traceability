@@ -26,20 +26,13 @@ except mariadb.Error as e:
 
 # Get Cursor
 # cur = conn.cursor()
-def obtener_datos_por_proceso(nombre_proceso):
+def obtener_datos_fila_unica():
     try:
         cursor = conn.cursor()
-        query = """
-            SELECT machine_id, operator, station 
-            FROM configurador 
-            WHERE process_name = ? 
-            LIMIT 1
-        """
-        cursor.execute(query, (nombre_proceso,))
-        resultado = cursor.fetchone()
-        return resultado
+        cursor.execute("SELECT machine_id, process_name, operator FROM configurador WHERE id = 1")
+        return cursor.fetchone()
     except Exception as e:
-        print(f"Error en la consulta: {e}")
+        print(f"Error: {e}")
         return None
 
 def insert_simple(machine, process, operator, station):
@@ -65,18 +58,39 @@ def select_distinct(column):
     return data
 
     query = f"""SELECT DISTINCT {column} FROM configurador""" 
-def insert_configurador(machine_id, process_name, operator, station, fecha):
-    cursor = conn.cursor()
 
-    sql = """
-        INSERT INTO configurador
-        (machine_id, process_name, operator, station, create_registration)
-        VALUES (?, ?, ?, ?, ?)
-    """
-
-    cursor.execute(sql, (machine_id, process_name, operator, station, fecha))
-    conn.commit()
-    cursor.close()
+def insert_configurador(machine, process, operator, station, fecha):
+    try:
+        cursor = conn.cursor()
+        
+        query = """
+            UPDATE configurador 
+            SET machine_id = ?, process_name = ?, operator = ?, station = ?
+            WHERE user_id = 9999
+        """
+        cursor.execute(query, (machine, process, operator, station))
+        
+        if cursor.rowcount == 0:
+            query_insert = """
+                INSERT INTO configurador (user_id, machine_id, process_name, operator, station)
+                VALUES (9999, ?, ?, ?, ?)
+            """
+            cursor.execute(query_insert, (machine, process, operator, station))
+            
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        print(f"Error al actualizar: {e}")
+        raise e
+    
+def obtener_datos_fila_unica():
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT machine_id, process_name, operator FROM configurador LIMIT 1")
+        return cursor.fetchone()
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
 
 def select_configurador():
     cursor = conn.cursor()
@@ -207,7 +221,6 @@ def delete_attribute(attribute_id):
     conn.commit()
     cursor.close()
     
-#TYPE_TEST //////////////// SE DEBE DEFINIR LA BASE DE DATOS Y CAMBIARLA //////////////////
 
 def select_type_test():
     cursor = conn.cursor()
@@ -258,15 +271,12 @@ def new_model(model):
         raise ValueError("No active project found")
 
     with conn.cursor() as cur:
-        # Desactivar modelos activos
         cur.execute("UPDATE model SET status_id = %s WHERE status_id = %s", (2, 1))
         conn.commit()
 
-        # Insertar nuevo modelo
         cur.execute("INSERT INTO model (name, project_id, status_id) VALUES (%s, %s, %s)", (model, project[0][0], 1))
         conn.commit()
 
-        # Obtener el nuevo modelo activo para el proyecto
         cur.execute("SELECT model_id, name, project_id FROM model WHERE status_id = 1 AND project_id = %s", (project[0][0],))
         models = cur.fetchall()
 
@@ -276,7 +286,6 @@ def new_model(model):
 
 def model():
     try:
-        # --- Obtener proyecto activo ---
         cursor_proj = conn.cursor()
         cursor_proj.execute("SELECT project_id, pro_key, pro_name FROM project WHERE status_id = 1")
         project = cursor_proj.fetchone()
@@ -287,8 +296,6 @@ def model():
             return None, None, None
         
         project_id = project[0]
-
-        # --- Obtener modelo activo ---
         cursor_model = conn.cursor()
         cursor_model.execute(
             "SELECT model_id, name, project_id FROM model WHERE status_id = 1 AND project_id = ?",
@@ -297,10 +304,8 @@ def model():
         model = cursor_model.fetchone()
         cursor_model.close()
 
-        # Si no hay modelo, crea uno nuevo (asegúrate de tener esa función implementada)
         if not model:
-            new_model("Model-T1")  # <-- Tu función para crear modelo
-            # Repetir consulta
+            new_model("Model-T1")  
             cursor_model2 = conn.cursor()
             cursor_model2.execute(
                 "SELECT model_id, name, project_id FROM model WHERE status_id = 1 AND project_id = ?",
@@ -313,7 +318,6 @@ def model():
             # print("No se pudo obtener o crear un modelo.")
             return project, None, None
 
-        # --- Obtener estación activa ---
         cursor_station = conn.cursor()
         cursor_station.execute("SELECT station_name FROM station WHERE status_id = 1")
         station = cursor_station.fetchone()
@@ -326,29 +330,24 @@ def model():
         return project, model, station
 
     except mariadb.Error as e:
-        # print(f"Error en consulta SQL: {e}")
         return None, None, None
     
 def piece_store(numPiece):
     try:
-        # Obtener proyecto activo
         cursor = conn.cursor()
         cursor.execute("SELECT project_id, pro_key, pro_name FROM project WHERE status_id = 1 LIMIT 1")
         project = cursor.fetchone()
         cursor.close()
 
         if not project:
-            # print("[ERROR] No se encontró un proyecto activo.")
             return "FAILED"
 
-        # Obtener primer modelo activo del proyecto
         cursor = conn.cursor()
         cursor.execute("SELECT model_id, name FROM model WHERE status_id = 1 AND project_id = ?", (project[0],))
         model = cursor.fetchone()
         cursor.close()
 
         if not model:
-            # print("[ERROR] No se encontró un modelo activo para el proyecto.")
             return "FAILED"
 
         # Desactivar piezas anteriores
@@ -377,28 +376,24 @@ def piece_store(numPiece):
 
 def select_model(model):
     with conn.cursor() as cur:
-        # Buscar modelo por nombre
         cur.execute("SELECT model_id, name, project_id FROM model WHERE name = %s", (model,))
         search_models = cur.fetchall()
 
         if not search_models:
             return "0"
 
-        # Obtener proyecto activo
         cur.execute("SELECT project_id FROM project WHERE status_id = 1")
         project = cur.fetchone()
         if not project:
             return "0"
 
-        # Desactivar modelos activos
         cur.execute("UPDATE model SET status_id = %s WHERE status_id = %s", (2, 1))
         conn.commit()
 
-        # Activar modelo seleccionado
         cur.execute("UPDATE model SET status_id = %s WHERE status_id = %s AND name = %s", (1, 2, model))
         conn.commit()
 
-        # Obtener modelo activo para el proyecto
+       
         cur.execute("SELECT model_id, name, project_id FROM model WHERE status_id = 1 AND project_id = %s", (project[0],))
         models = cur.fetchall()
 
@@ -413,7 +408,7 @@ def stations():
                        FROM station 
                        INNER JOIN data_tracking.type_station ON type_station.ts_id = station.ts_id
                        WHERE status_id = 1''')
-        result = cur.fetchone()  # Solo el primero
+        result = cur.fetchone()  #
     return result
 
 def parameters_pressfit(element, name_piece):
@@ -426,7 +421,6 @@ def parameters_pressfit(element, name_piece):
     timer = rfc3339.rfc3339(tasktimestamp, utc=True, use_system_timezone=False) + " " + last_digit[3]
 
     with conn.cursor() as cur:
-        # Obtener medición
         cur.execute(
             "SELECT pressfit_measurement_id, name FROM data_tracking.pressfit_measurement WHERE `key` = %s",
             (element[0],)
@@ -435,7 +429,6 @@ def parameters_pressfit(element, name_piece):
         if not measurement:
             return "Measurement key not found"
 
-        # Obtener estación activa
         cur.execute('''
             SELECT station_id, station_key, station_name 
             FROM station
@@ -447,7 +440,6 @@ def parameters_pressfit(element, name_piece):
         if not station:
             return "No active station found"
 
-        # Obtener parte activa
         cur.execute(
             "SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,)
         )
@@ -495,7 +487,6 @@ def parameters_screwing(element, name_piece):
         now = datetime.now(timezone.utc).astimezone()
         test_time = rfc3339.rfc3339(now, utc=True, use_system_timezone=False)
 
-        # Obtener ID del measurement
         cursor = conn.cursor()
         cursor.execute("""
             SELECT screwing_measurement_id, name 
@@ -508,7 +499,6 @@ def parameters_screwing(element, name_piece):
         if not measurement:
             raise ValueError("Measurement no encontrado para key: " + element[0])
 
-        # Obtener estaciones
         cursor = conn.cursor()
         cursor.execute("""
             SELECT station_id, station_key, station_name 
@@ -521,7 +511,6 @@ def parameters_screwing(element, name_piece):
         if not station:
             raise ValueError("No hay estaciones activas")
 
-        # Obtener part_id
         cursor = conn.cursor()
         cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,))
         part = cursor.fetchone()
@@ -530,16 +519,12 @@ def parameters_screwing(element, name_piece):
         if not part:
             # raise ValueError("Parte no encontrada: " + name_piece)
             return "FAILED"
-
-        # Datos para inserción
         value, low_limit, high_limit, data_type, units, result, metadata = element[1:8]
         compoperator = evaluation.evaluation(element[1:4])
         description = f"{measurement[1]}_{element[8]}"
         screwing_measurement_id = measurement[0]
         station_id = station[0]
         part_id = part[0]
-
-        # Insertar en DB
         cursor = conn.cursor()
         sql = '''
             INSERT INTO parameters_screwing (
