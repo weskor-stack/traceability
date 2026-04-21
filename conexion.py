@@ -25,6 +25,90 @@ except mariadb.Error as e:
 
 # Get Cursor
 # cur = conn.cursor()
+
+#URLs
+def get_station():
+    try:
+        conn = mariadb.connect(
+            user="root",
+            password="u8ch9Xn4Ol8woLw3E2A6",
+            host="127.0.0.1",
+            port=3306,
+            database="data_tracking_qwert"
+        )
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT station 
+            FROM configurador 
+            ORDER BY configurador_id DESC 
+            LIMIT 1
+        """)
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return row[0] if row else None
+    except mariadb.Error as e:
+        print(f"Error en get_station: {e}")
+        return None
+def get_connection():
+    """Reutiliza la misma función de conexión que ya tienes."""
+    return mariadb.connect(
+        host="localhost",
+        port=3306,
+        user="tu_usuario",
+        password="tu_password",
+        database="tu_base_de_datos"
+    )
+def select_api_configs():
+    """
+    Retorna: (api_id, nombre, metodo, url, activa, descripcion, creado_en)
+    """
+    conn   = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT api_id, nombre, metodo, url, activa, descripcion, creado_en
+        FROM api_configs
+        ORDER BY nombre ASC
+    """)
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return rows
+
+def insert_api_config(nombre, metodo, url, activa, descripcion, creado_en):
+    """Inserta y retorna el api_id generado."""
+    conn   = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO api_configs (nombre, metodo, url, activa, descripcion, creado_en)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (nombre, metodo, url, int(activa), descripcion, creado_en))
+    conn.commit()
+    api_id = cursor.lastrowid
+    cursor.close()
+    conn.close()
+    return api_id
+
+def update_api_config(api_id, nombre, metodo, url, activa, descripcion):
+    conn   = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE api_configs
+        SET nombre = ?, metodo = ?, url = ?, activa = ?, descripcion = ?
+        WHERE api_id = ?
+    """, (nombre, metodo, url, int(activa), descripcion, api_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def delete_api_config(api_id):
+    conn   = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM api_configs WHERE api_id = ?", (api_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
 def insert_attribute(name, unit, upper, lower, value, create_registration):
     cursor = conn.cursor()
 
@@ -36,11 +120,10 @@ def insert_attribute(name, unit, upper, lower, value, create_registration):
 
     cursor.execute(sql, (name, unit, upper, lower, value, create_registration))
     conn.commit()
-
     attribute_id = cursor.lastrowid
     cursor.close()
-
     return attribute_id
+
 def select_attributes():
     cursor = conn.cursor()
     cursor.execute("""
