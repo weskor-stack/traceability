@@ -24,9 +24,8 @@ import time
 import platform
 import logging
 import traceback
-import interlocking_json
-import leer_shop_order
-import procesar_registros
+import Attributes
+import Type_test
 
 def configurar_logging():
     """Configura el sistema de logging"""
@@ -473,7 +472,7 @@ def worker(conn, addr):
 
     try:
         stationName_data = conexion.model()
-
+        print(stationName_data)
         stationName = stationName_data[2][0]
         modelName = stationName_data[1][1]
 
@@ -482,7 +481,6 @@ def worker(conn, addr):
 
         safe_insert("PLC - Connected"+"\n")
         logging.info("PLC - Connected")
-        conn.send("Ready".encode('UTF-8'))
 
         green_label.configure(image=image_green_full)
         red_label.configure(image=image_red)
@@ -1268,68 +1266,22 @@ def worker(conn, addr):
 
                             cadena = ""
 
-                    case "lasser":
+                    case "laser":
                         
-                        configurador = conexion.configurador()
-                        registros_reales = procesar_registros.verificar_archivos()
-                        if "ST10" in configurador[3]:
-                            if registros_reales == "EMPTY_FILE":
-                                safe_insert("Command received-> "+comando_completo+"\n"+"No shop_order file found\n"+"Command FAILED", "red")
-                                logging.warning("Command received-> "+comando_completo+"\n"+"No shop_order file found\n"+"Command FAILED")
-                                try:
-                                    conn.send("FAILED".encode('UTF-8'))
-                                except Exception as e:
-                                    safe_insert(f"Error: {e}", "red")
-                                conexionBitacora.event("LAS-002","|Command received| "+comando_completo+" No shop_order file found",month,day)
-                                conexionBitacora.event("CMD-F001","|Command,FAILED|",month,day)
-
-                                green_label.configure(image=image_green)
-                                red_label.configure(image=image_red_full)
-                            elif registros_reales == "EMPTY_DATA":
-                                safe_insert("Command received-> "+comando_completo+"\n"+"Shop_order file is empty\n"+"Command FAILED", "red")
-                                logging.warning("Command received-> "+comando_completo+"\n"+"Shop_order file is empty\n"+"Command FAILED")
-                                try:
-                                    conn.send("FAILED".encode('UTF-8'))
-                                except Exception as e:
-                                    safe_insert(f"Error: {e}", "red")
-                                conexionBitacora.event("LAS-002","|Command received| "+comando_completo+" Shop_order file is empty",month,day)
-                                conexionBitacora.event("CMD-F001","|Command,FAILED|",month,day)
-
-                                green_label.configure(image=image_green)
-                                red_label.configure(image=image_red_full)
-                            else:
-                                part_number, serial_number, process_name = leer_shop_order.leer_archivo_generado() 
-                                serial = conexion.get_part_numbers(serial_number)
-                                if serial != "PASSED":
-                                    resultado, mensaje = procesar_registros.procesar_primer_registro()
-                                    conn.send(f"{serial}".encode('UTF-8'))
-                                    safe_insert(f"Command received-> {comando_completo} part: {serial}\nCommand PASSED\nPrinting...\n{mensaje}", "green")
-                                    logging.info("Command received-> {comando_completo} part: {serial}\nCommand PASSED\nPrinting...\n{mensaje}")
-
-                                    green_label.configure(image=image_green_full)
-                                    red_label.configure(image=image_red)
-                                    
-                                else:
-                                    resultado, mensaje = procesar_registros.procesar_primer_registro()
-                                    conn.send("FAILED".encode('UTF-8'))
-                                    safe_insert(f"Command received-> {comando_completo} part: {serial}\nCommand PASSED\nDon't print\n", "orange")
-                                    logging.info("Command received-> {comando_completo} part: {serial}\nCommand PASSED\nDon't print\n")
-                                    green_label.configure(image=image_green)
-                                    red_label.configure(image=image_red_full)
+                        serial = conexion.get_part_numbers('P2173404-00-C:SEYU26061A0765')
+                        if serial != "PASSED":
+                            conn.send(f"{serial}".encode('UTF-8'))
+                            safe_insert(f"Command received-> {cadena} part: {serial}\nCommand PASSED\nPrinting...\n", "green")
                         else:
-                            conn.send("FAILED".encode('UTF-8'))
-                            safe_insert(f"Command received-> {comando_completo} part: {serial_number}\nCommand FAILED\n", "RED")
-                            logging.warning("Command received-> {comando_completo} part: {serial_number}\nCommand FAILED\n")
-
-                            green_label.configure(image=image_green)
-                            red_label.configure(image=image_red_full)
+                            conn.send("do_not_print".encode('UTF-8'))
+                            safe_insert(f"Command received-> {cadena} part: {serial}\nCommand PASSED\nDon't print\n", "orange")
                     case _:
-                        safe_insert("Command received-> "+comando_completo+"\n"+"Command FAILED"+"\n", "red")
+                        safe_insert("Command received-> "+cadena+"\n"+"Command FAILED"+"\n", "red")
                         try:
                             conn.send("FAILED".encode('UTF-8'))
                         except Exception as e:
                             safe_insert(f"Error enviando: {e}", "red")
-                        conexionBitacora.event("COM-002","|Command received| "+comando_completo,month,day)
+                        conexionBitacora.event("COM-002","|Command received| "+cadena,month,day)
                         conexionBitacora.event("CMD-F001","|Command,FAILED|",month,day)
 
                         green_label.configure(image=image_green)
