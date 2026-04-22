@@ -69,10 +69,10 @@ class FormularioPrincipal:
         for i, registro in enumerate(registros):
             tag = "par" if i % 2 == 0 else "impar"
             item = self.tabla.insert("", "end", values=(
-                registro[1],  # name
-                registro[4],  # lower_limit
-                registro[3],  # upper_limit
-                registro[5],  # value_expected
+                registro[1],  
+                registro[4],  
+                registro[3],  
+                registro[5], 
             ), tags=(tag,))
 
             self.data[item] = {
