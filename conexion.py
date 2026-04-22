@@ -1061,6 +1061,48 @@ def welding_data(part_id):
         # print(f"[ERROR] electrical_data(): {e}")
         return []
     
+def heatstake_data(part_id):
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                SELECT 
+                    part_id, 
+                    cicle_time, 
+                    serial_number, 
+                    program_name,
+                    times_tamp,
+                    grade,
+                    description,
+                    create_registration
+                FROM heatstake
+                WHERE part_id = %s
+                ORDER BY heatstake_id ASC
+            ''', (part_id,))
+            # print(cursor.fetchall())
+            return cursor.fetchall()
+    except Exception as e:
+        # print(f"[ERROR] electrical_data(): {e}")
+        return []
+    
+def graph_data(part_id):
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                SELECT 
+                    part_id, 
+                    data_image, 
+                    description,
+                    create_registration
+                FROM graph_image
+                WHERE part_id = %s
+                ORDER BY graph_image_id ASC
+            ''', (part_id,))
+            # print(cursor.fetchall())
+            return cursor.fetchall()
+    except Exception as e:
+        # print(f"[ERROR] electrical_data(): {e}")
+        return []
+    
 def temperature_data(part_id):
     try:
         with conn.cursor() as cursor:
@@ -1746,6 +1788,96 @@ def parameters_welding(element):
         return "FAILED"
     except Exception as e:
         # print(f"[ERROR] parameters_welding(): {e}")
+        return "FAILED"
+
+def parameters_heatstake(element):
+        
+    try:
+        # Obtener part activo
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(element[4],))
+            part = cursor.fetchone()
+        
+        if not part:
+            return "FAILED"
+        
+        part_id = part[0]
+        
+        # Insertar datos en parameters_continuity
+        sql = '''
+            INSERT INTO heatstake (
+                cicle_time, serial_number,
+                program_name, times_tamp, grade, description, part_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        '''
+        
+        val = (
+            element[3],  # cicle_time
+            element[4],  # serial_number
+            element[5],  # program_name
+            element[6],  # times_tamp
+            element[7],  # grade
+            element[8],  # description
+            part_id
+        )
+        
+        # print(f"Valores a insertar: {val}")
+        
+        with conn.cursor() as cursor:
+            cursor.execute(sql, val)
+            conn.commit()
+        
+        # print("[ÉXITO] Datos insertados correctamente en parameters_welding")
+        return "PASSED"
+        
+    except mariadb.Error as e:
+        # print(f"[DB ERROR] parameters_heatstake(): {e}")
+        # NO cierres la conexión aquí
+        return "FAILED"
+    except Exception as e:
+        # print(f"[ERROR] parameters_heatstake(): {e}")
+        return "FAILED"
+
+def parameters_graph(element):
+    try:
+        # Obtener part activo
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(element[5],))
+            part = cursor.fetchone()
+        
+        if not part:
+            return "FAILED"
+        
+        part_id = part[0]
+        
+        # Insertar datos en parameters_continuity
+        sql = '''
+            INSERT INTO graph_image (
+                part_id, data_image, description
+            ) VALUES (?, ?, ?)
+        '''
+        
+        val = (
+            part_id,
+            element[3],  # data_image
+            element[4],  # description
+        )
+        
+        # print(f"Valores a insertar: {val}")
+        
+        with conn.cursor() as cursor:
+            cursor.execute(sql, val)
+            conn.commit()
+        
+        # print("[ÉXITO] Datos insertados correctamente en parameters_welding")
+        return "PASSED"
+        
+    except mariadb.Error as e:
+        # print(f"[DB ERROR] parameters_heatstake(): {e}")
+        # NO cierres la conexión aquí
+        return "FAILED"
+    except Exception as e:
+        # print(f"[ERROR] parameters_heatstake(): {e}")
         return "FAILED"
 
 ############################################### CONFIGURADOR ####################################################
