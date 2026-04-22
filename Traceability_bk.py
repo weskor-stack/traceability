@@ -6,10 +6,10 @@ from CTkMessagebox import CTkMessagebox
 import customtkinter as ctk
 from PIL import Image
 from CustomTkinterMessagebox import *
-from tkinter import StringVar, Tk, messagebox 
+from tkinter import StringVar, messagebox 
 import tkinter.messagebox as tkmsg
 from CTkTable import *
-#PC name
+# PC name
 import get_name_PC
 # MySQL conexión
 import conexion
@@ -29,10 +29,20 @@ import Type_test
 
 def configurar_logging():
     """Configura el sistema de logging"""
+    
+    # Crear directorio logs si no existe
     os.makedirs("logs", exist_ok=True)
+    
+    # Nombre del archivo de log con fecha
     log_filename = f"logs/server_{datetime.now().strftime('%Y%m%d')}.log"
-    logger = logging.getLogger() 
-    logger.handlers.clear()  
+    
+    # Obtener logger root
+    logger = logging.getLogger()
+    
+    # Limpiar handlers existentes
+    logger.handlers.clear()
+    
+    # Configurar nivel
     logger.setLevel(logging.DEBUG)
     
     # Crear formatter
@@ -75,7 +85,9 @@ def configurar_logging():
     # Forzar flush
     for handler in logger.handlers:
         handler.flush()
+    
     return logger
+
 logger = configurar_logging()
 
 
@@ -122,23 +134,9 @@ root.iconbitmap("favicon.ico")
 root.grid_columnconfigure((0, 1), weight=1)
 root.grid_rowconfigure(0, weight=1)
 
-def abrir_configurador():
-    try:
-        ventana = ctk.CTkToplevel(root)
-        ventana.title("Configurador")   
-        try:
-            ventana.iconbitmap("favicon.ico")
-        except:
-            pass 
-        ventana.attributes("-topmost", True)
-        from Configurador import ConfiguradorUI
-        app_config = ConfiguradorUI(ventana)
-        
-    except Exception as e:
-        print(f"Error al abrir el configurador: {e}")
-
 def safe_exit():
     global running, current_operator, config_data, login_window, logout_window
+
     print("Cerrando aplicación...")
     logging.info(f"Cerrando aplicación...")
 
@@ -186,14 +184,6 @@ piece_name = StringVar()
 # Crear frame principal
 frame = ctk.CTkFrame(master=root)
 frame.pack(pady=30, padx=60, fill="both", expand=True)
-button_config = ctk.CTkButton(
-    master=frame, 
-    text="Config ⚙", 
-    width=80, 
-    fg_color="#3580b3", 
-    hover_color="#555555",
-    command=abrir_configurador
-)
 
 lbl_station = ctk.CTkLabel(master=frame, text='Station:')
 lbl_station.pack(side=ctk.LEFT, pady=10, padx=40, anchor='nw')
@@ -229,15 +219,15 @@ entry_piece.place(x=500, y=60)
 texto = ctk.CTkTextbox(master=frame, height=230, width=700, state="disabled")
 texto.place(x=50, y=150)
 font=ctk.CTkFont(family='Arial', size=16)
-                
+
 lbl_comand = ctk.CTkLabel(master=frame, text='Command:')
+
 
 lbl_comand.place(x=780, y=150)
 # Load the image 
 image_green = ctk.CTkImage(light_image=Image.open('verde.png'),
                                     dark_image=Image.open('verde.png'),
                                     size=(30, 30))
-
 image_red = ctk.CTkImage(light_image=Image.open('rojo.png'),
                                     dark_image=Image.open('rojo.png'),
                                     size=(30, 30))
@@ -309,13 +299,13 @@ amc_label.place(x=1120, y=610)
 
 
 label_user = ctk.CTkLabel(master=frame, text="User:")
-label_user.place(x=1050, y=300)
+label_user.place(x=1050, y=250)
 
 label_users = ctk.CTkLabel(master=frame, text="Admin")
-label_users.place(x=1050, y=320)
+label_users.place(x=1090, y=250)
 
 headers = [["Measurement","Value","Lower limit","Upper limit","Type","Unit","Result"]]
-button_config.place(x=1050, y=200)
+
 # table = CTkTable(master=frame, row=8, column=7, header_color="#1f618d", values= headers)
 # table.pack(expand=False, fill="both", padx=10, pady=10)
 # table.configure(width=150)
@@ -324,7 +314,6 @@ button_config.place(x=1050, y=200)
 ########################################################
 # CLASE PARA MANEJO SEGURO DE LA TABLA
 ########################################################
-
 class SafeTableManager:
     """Versión simplificada con scrollbar automático"""
     def __init__(self, master_frame, x=50, y=390, width=900, height=300):
@@ -483,7 +472,7 @@ def worker(conn, addr):
 
     try:
         stationName_data = conexion.model()
-
+        print(stationName_data)
         stationName = stationName_data[2][0]
         modelName = stationName_data[1][1]
 
@@ -492,7 +481,6 @@ def worker(conn, addr):
 
         safe_insert("PLC - Connected"+"\n")
         logging.info("PLC - Connected")
-        conn.send("Ready".encode('UTF-8'))
 
         green_label.configure(image=image_green_full)
         red_label.configure(image=image_red)
@@ -1278,68 +1266,22 @@ def worker(conn, addr):
 
                             cadena = ""
 
-                    case "lasser":
+                    case "laser":
                         
-                        configurador = conexion.configurador()
-                        registros_reales = procesar_registros.verificar_archivos()
-                        if "ST10" in configurador[3]:
-                            if registros_reales == "EMPTY_FILE":
-                                safe_insert("Command received-> "+comando_completo+"\n"+"No shop_order file found\n"+"Command FAILED", "red")
-                                logging.warning("Command received-> "+comando_completo+"\n"+"No shop_order file found\n"+"Command FAILED")
-                                try:
-                                    conn.send("FAILED".encode('UTF-8'))
-                                except Exception as e:
-                                    safe_insert(f"Error: {e}", "red")
-                                conexionBitacora.event("LAS-002","|Command received| "+comando_completo+" No shop_order file found",month,day)
-                                conexionBitacora.event("CMD-F001","|Command,FAILED|",month,day)
-
-                                green_label.configure(image=image_green)
-                                red_label.configure(image=image_red_full)
-                            elif registros_reales == "EMPTY_DATA":
-                                safe_insert("Command received-> "+comando_completo+"\n"+"Shop_order file is empty\n"+"Command FAILED", "red")
-                                logging.warning("Command received-> "+comando_completo+"\n"+"Shop_order file is empty\n"+"Command FAILED")
-                                try:
-                                    conn.send("FAILED".encode('UTF-8'))
-                                except Exception as e:
-                                    safe_insert(f"Error: {e}", "red")
-                                conexionBitacora.event("LAS-002","|Command received| "+comando_completo+" Shop_order file is empty",month,day)
-                                conexionBitacora.event("CMD-F001","|Command,FAILED|",month,day)
-
-                                green_label.configure(image=image_green)
-                                red_label.configure(image=image_red_full)
-                            else:
-                                part_number, serial_number, process_name = leer_shop_order.leer_archivo_generado() 
-                                serial = conexion.get_part_numbers(serial_number)
-                                if serial != "PASSED":
-                                    resultado, mensaje = procesar_registros.procesar_primer_registro()
-                                    conn.send(f"{serial}".encode('UTF-8'))
-                                    safe_insert(f"Command received-> {comando_completo} part: {serial}\nCommand PASSED\nPrinting...\n{mensaje}", "green")
-                                    logging.info("Command received-> {comando_completo} part: {serial}\nCommand PASSED\nPrinting...\n{mensaje}")
-
-                                    green_label.configure(image=image_green_full)
-                                    red_label.configure(image=image_red)
-                                    
-                                else:
-                                    resultado, mensaje = procesar_registros.procesar_primer_registro()
-                                    conn.send("FAILED".encode('UTF-8'))
-                                    safe_insert(f"Command received-> {comando_completo} part: {serial}\nCommand PASSED\nDon't print\n", "orange")
-                                    logging.info("Command received-> {comando_completo} part: {serial}\nCommand PASSED\nDon't print\n")
-                                    green_label.configure(image=image_green)
-                                    red_label.configure(image=image_red_full)
+                        serial = conexion.get_part_numbers('P2173404-00-C:SEYU26061A0765')
+                        if serial != "PASSED":
+                            conn.send(f"{serial}".encode('UTF-8'))
+                            safe_insert(f"Command received-> {cadena} part: {serial}\nCommand PASSED\nPrinting...\n", "green")
                         else:
-                            conn.send("FAILED".encode('UTF-8'))
-                            safe_insert(f"Command received-> {comando_completo} part: {serial_number}\nCommand FAILED\n", "RED")
-                            logging.warning("Command received-> {comando_completo} part: {serial_number}\nCommand FAILED\n")
-
-                            green_label.configure(image=image_green)
-                            red_label.configure(image=image_red_full)
+                            conn.send("do_not_print".encode('UTF-8'))
+                            safe_insert(f"Command received-> {cadena} part: {serial}\nCommand PASSED\nDon't print\n", "orange")
                     case _:
-                        safe_insert("Command received-> "+comando_completo+"\n"+"Command FAILED"+"\n", "red")
+                        safe_insert("Command received-> "+cadena+"\n"+"Command FAILED"+"\n", "red")
                         try:
                             conn.send("FAILED".encode('UTF-8'))
                         except Exception as e:
                             safe_insert(f"Error enviando: {e}", "red")
-                        conexionBitacora.event("COM-002","|Command received| "+comando_completo,month,day)
+                        conexionBitacora.event("COM-002","|Command received| "+cadena,month,day)
                         conexionBitacora.event("CMD-F001","|Command,FAILED|",month,day)
 
                         green_label.configure(image=image_green)

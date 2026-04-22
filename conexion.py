@@ -2179,6 +2179,66 @@ def get_part_numbers(numero):
     
     return "PASSED"
     
+################################################################# Configurador ###########################################################################
+
+def configurador():
+    
+    # Obtener configuración actual
+    cursor = conn.cursor()
+    cursor.execute("SELECT machine_id, process_name, operator, station, product FROM configurador")
+    configurador = cursor.fetchone()
+    cursor.close()
+
+    if not configurador:
+        print("[ERROR] No se encontró configuración activa.")
+        
+        return "FAILED"
+    
+    return configurador
+
+
+################################################################# Atributos ###########################################################################
+
+def atributos():
+    # Obtener atributos actuales
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT name, unit, upper_limit, lower_limit, value_expected, time FROM attribute")
+            
+            results = cursor.fetchall()
+            print([result for result in results])
+            return [result for result in results]
+            # return [result[0].upper() for result in results]
+    except Exception as e:
+        print("[ERROR] No se encontraron atributos.")
+        return []
+    
+################################################################# URLs ###########################################################################
+
+def get_urls():
+    """Obtener todas las URLs de la tabla url_data - Estructura actualizada"""    
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                SELECT
+                    name,
+                    url_data
+                FROM url_data 
+                WHERE tc_id = 1
+                ORDER BY url_data_id ASC
+            ''')
+            urls = cursor.fetchall()
+            
+            # Convertir a diccionario para fácil acceso
+            url_dict = {}
+            for name, url in urls:
+                url_dict[name] = url
+            # print(url_dict['SHOP ORDER'])
+            return url_dict
+            
+    except Exception as e:
+        print(f"Error obteniendo URLs: {e}")
+        return {}
 
 #################################################################################################################
 # name = "P1895152-00-G:SHG2242791000290"
@@ -2191,3 +2251,5 @@ def get_part_numbers(numero):
 # temperature_data(18)
 # parameters_welding(parametros)
 # welding_data(1)
+# atributos()
+# get_urls()
