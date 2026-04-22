@@ -358,7 +358,7 @@ def json_file(parte):
             timer = rfc3339.rfc3339(tiempo, utc=True, use_system_timezone=False) + " " + last_digit[3]
             indice +=1
 
-            if x[3] == "1":
+            if x[3] == "PASSED":
                 resultado = "Passed"
             else:
                 resultado = "Failed"
@@ -386,7 +386,7 @@ def json_file(parte):
             timer = rfc3339.rfc3339(tiempo, utc=True, use_system_timezone=False) + " " + last_digit[3]
             indice +=1
 
-            if x[5] == "1":
+            if x[5] == "PASSED":
                 resultado = "Passed"
             else:
                 resultado = "Failed"
@@ -403,6 +403,60 @@ def json_file(parte):
                     "result": resultado, #x[5],
                     "testtime": timer, #x[9],
                     "units": x[6]
+                }
+            )
+            
+        heatstake = conexion.heatstake_data(piece_id)
+        indice = 0
+        configurador = conexion.configurador()
+        machine_id = configurador[0]
+        for x in heatstake:
+            # tiempo = x[9].astimezone()
+            # last_digit = str(tiempo).split('-')
+            # timer = rfc3339.rfc3339(tiempo, utc=True, use_system_timezone=False) + " " + last_digit[3]
+            indice +=1
+            
+            parameters.extend(
+                {
+                    "command": "AddNonTrackedComponent",
+                    "ref_designator": "Cycle time",
+                    "component_id": x[1]
+                },
+                {
+                    "command": "AddNonTrackedComponent",
+                    "ref_designator": "Machine ID",
+                    "component_id": machine_id
+                },
+                {
+                    "command": "AddNonTrackedComponent",
+                    "ref_designator": "Laser program name + version",
+                    "component_id": x[3]
+                },
+                {
+                    "command": "AddNonTrackedComponent",
+                    "ref_designator": "Grade",
+                    "component_id": x[5]
+                },
+                {
+                    "command": "AddNonTrackedComponent",
+                    "ref_designator": "Part Number",
+                    "component_id": x[2]
+                }
+            )
+
+        graph = conexion.graph_data(piece_id)
+        indice = 0
+        for x in graph:
+            # tiempo = x[9].astimezone()
+            # last_digit = str(tiempo).split('-')
+            # timer = rfc3339.rfc3339(tiempo, utc=True, use_system_timezone=False) + " " + last_digit[3]
+            indice +=1
+            
+            parameters.append(
+                {
+                    "command": "AddNonTrackedComponent",
+                    "ref_designator": "Graph",
+                    "component_id": x[1]
                 }
             )
 
