@@ -29,13 +29,7 @@ except mariadb.Error as e:
 #URLs
 def get_station():
     try:
-        conn = mariadb.connect(
-            user="root",
-            password="u8ch9Xn4Ol8woLw3E2A6",
-            host="127.0.0.1",
-            port=3306,
-            database="data_tracking_qwert"
-        )
+        conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("""
             SELECT station 
@@ -50,61 +44,38 @@ def get_station():
     except mariadb.Error as e:
         print(f"Error en get_station: {e}")
         return None
+    
 def get_connection():
-    """Reutiliza la misma función de conexión que ya tienes."""
     return mariadb.connect(
-        host="localhost",
+        user="root",
+        password="u8ch9Xn4Ol8woLw3E2A6",
+        host="127.0.0.1",
         port=3306,
-        user="tu_usuario",
-        password="tu_password",
-        database="tu_base_de_datos"
+        database="data_tracking_qwert"
     )
+
 def select_api_configs():
     """
-    Retorna: (api_id, nombre, metodo, url, activa, descripcion, creado_en)
+    Lee de url_data. 
+    Columnas: [0]url_data_id [1]tc_id [2]name [3]url_data [4]user_id [5]create_registration
     """
     conn   = get_connection()
     cursor = conn.cursor()
-    cursor.execute("""
-        SELECT api_id, nombre, metodo, url, activa, descripcion, creado_en
-        FROM api_configs
-        ORDER BY nombre ASC
-    """)
+    cursor.execute("SELECT url_data_id, tc_id, name, url_data FROM url_data ORDER BY url_data_id ASC")
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
+    print(f"Registros DB: {rows}")  # debug — quítalo cuando funcione
     return rows
 
-def insert_api_config(nombre, metodo, url, activa, descripcion, creado_en):
-    """Inserta y retorna el api_id generado."""
+def update_api_by_name(nombre, url):
+    """Actualiza la URL de un registro por su nombre."""
     conn   = get_connection()
     cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO api_configs (nombre, metodo, url, activa, descripcion, creado_en)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (nombre, metodo, url, int(activa), descripcion, creado_en))
-    conn.commit()
-    api_id = cursor.lastrowid
-    cursor.close()
-    conn.close()
-    return api_id
-
-def update_api_config(api_id, nombre, metodo, url, activa, descripcion):
-    conn   = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        UPDATE api_configs
-        SET nombre = ?, metodo = ?, url = ?, activa = ?, descripcion = ?
-        WHERE api_id = ?
-    """, (nombre, metodo, url, int(activa), descripcion, api_id))
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-def delete_api_config(api_id):
-    conn   = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM api_configs WHERE api_id = ?", (api_id,))
+    cursor.execute(
+        "UPDATE url_data SET url_data = ? WHERE name = ?",
+        (url, nombre)
+    )
     conn.commit()
     cursor.close()
     conn.close()

@@ -14,11 +14,13 @@ class FormularioApiConfig:
             self.root.iconbitmap("favicon.ico")
         except:
             pass
+
+        # Nombres exactos como están en la columna 'name' de url_data
         self.APIS_BASE = [
-            "API INTERLOCKING",
-            "API TRACEABILITY",
+            "INTERLOCKING",
+            "TRACEABILITY",
         ]
-        self.API_SHOP_ORDER = "API SHOP ORDER"
+        self.API_SHOP_ORDER = "SHOP ORDER"
 
         self.entries = {}
         self.station = self._leer_estacion()
@@ -27,27 +29,29 @@ class FormularioApiConfig:
         self.cargar_configuracion()
 
     def _leer_estacion(self):
-        """Lee la estación actual desde Data_tracking_qwert.configurador.
-        Ejemplos de valores: ST10_LASSER, ST20_PRESSFIT, ST30_HEATSTACKING"""
         try:
             resultado = conexion.get_station()
             if resultado:
-                return str(resultado).strip().upper() 
+                return str(resultado).strip().upper()
         except Exception as e:
             print(f"Error al leer estación: {e}")
         return ""
 
-    def _setup_ui(self):
+    def _apis_para_estacion(self):
+        """Devuelve la lista de nombres de API según la estación activa."""
         if self.station.startswith("ST10"):
-            apis = [self.API_SHOP_ORDER] + self.APIS_BASE
+            return [self.API_SHOP_ORDER] + self.APIS_BASE
         else:
-            apis = self.APIS_BASE  
+            return self.APIS_BASE
+
+    def _setup_ui(self):
+        apis = self._apis_para_estacion()
         altura = 180 + (len(apis) * 72)
         self.root.geometry(f"650x{altura}")
 
-        self.root.grid_rowconfigure(0, weight=0)  
-        self.root.grid_rowconfigure(1, weight=0)  
-        self.root.grid_rowconfigure(2, weight=1)  
+        self.root.grid_rowconfigure(0, weight=0)
+        self.root.grid_rowconfigure(1, weight=0)
+        self.root.grid_rowconfigure(2, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
 
         # --- HEADER ---
@@ -58,7 +62,7 @@ class FormularioApiConfig:
                  font=("Segoe UI", 16, "bold"),
                  bg="#1565C0", fg="#FFFFFF").pack(anchor="w")
 
-        estacion_label = self.station.upper() if self.station else "Sin estación"
+        estacion_label = self.station if self.station else "Sin estación"
         tk.Label(header, text=f"Estación activa: {estacion_label}  —  Todas las APIs son obligatorias.",
                  font=("Segoe UI", 9), bg="#1565C0", fg="#BBDEFB").pack(anchor="w", pady=(4, 0))
 
@@ -83,7 +87,7 @@ class FormularioApiConfig:
                   relief="solid", bd=1,
                   padx=16, pady=6,
                   cursor="hand2").pack(side="right", padx=(0, 8))
-        
+
         self.container = tk.Frame(self.root, bg="#FFFFFF", padx=28, pady=16)
         self.container.grid(row=2, column=0, sticky="nsew")
 
@@ -114,13 +118,23 @@ class FormularioApiConfig:
         self.entries[nombre] = entry
 
     def cargar_configuracion(self):
+        """
+        Lee url_data completa y filtra solo las APIs que corresponden
+        a la estación activa. Columnas: [0]id [1]tc_id [2]name [3]url_data ...
+        """
         try:
-            registros = conexion.select_api_configs()
-            dict_db = {r[1]: r[3] for r in registros}
-            for nombre, entry in self.entries.items():
-                url = dict_db.get(nombre, "http://127.0.0.1:8000/")
+            registros = conexion.select_api_configs()  # SELECT * FROM url_data
+            # Construir dict {name: url_data} con lo que vino de la DB
+            dict_db = {str(r[2]).strip(): r[3] for r in registros}
+
+            apis_visibles = self._apis_para_estacion()
+
+            for nombre in apis_visibles:
+                entry = self.entries[nombre]
+                url = dict_db.get(nombre, "")
                 entry.delete(0, tk.END)
                 entry.insert(0, url)
+
         except Exception as e:
             print(f"Error al cargar configuración: {e}")
 
