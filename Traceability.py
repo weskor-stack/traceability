@@ -24,7 +24,7 @@ import time
 import platform
 import logging
 import traceback
-
+import Configurador
 
 def configurar_logging():
     """Configura el sistema de logging"""
