@@ -29,12 +29,13 @@ except mariadb.Error as e:
 def obtener_datos_fila_unica():
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT machine_id, process_name, operator FROM configurador WHERE id = 1")
+        # Aquí pedimos explícitamente los 6 datos:
+        cursor.execute("SELECT machine_id, process_name, operator, station, product, shop_order FROM configurador LIMIT 1")
         return cursor.fetchone()
     except Exception as e:
         print(f"Error: {e}")
         return None
-
+    
 def insert_simple(machine, process, operator, station):
     cursor = conn.cursor()
 
@@ -59,39 +60,33 @@ def select_distinct(column):
 
     query = f"""SELECT DISTINCT {column} FROM configurador""" 
 
-def insert_configurador(machine, process, operator, station, fecha):
+def insert_configurador(machine, process, operator, station, product, shop_order):
+    """Actualiza la fila del usuario 9999 con TODOS los campos"""
     try:
         cursor = conn.cursor()
-        
-        query = """
+        # 1. Intentamos actualizar la fila existente
+        query_update = """
             UPDATE configurador 
-            SET machine_id = ?, process_name = ?, operator = ?, station = ?
+            SET machine_id = ?, process_name = ?, operator = ?, station = ?, product = ?, shop_order = ?
             WHERE user_id = 9999
         """
-        cursor.execute(query, (machine, process, operator, station))
+        cursor.execute(query_update, (machine, process, operator, station, product, shop_order))
         
+        # 2. Si no existe (rowcount == 0), la creamos
         if cursor.rowcount == 0:
             query_insert = """
-                INSERT INTO configurador (user_id, machine_id, process_name, operator, station)
-                VALUES (9999, ?, ?, ?, ?)
+                INSERT INTO configurador (user_id, machine_id, process_name, operator, station, product, shop_order)
+                VALUES (9999, ?, ?, ?, ?, ?, ?)
             """
-            cursor.execute(query_insert, (machine, process, operator, station))
+            cursor.execute(query_insert, (machine, process, operator, station, product, shop_order))
             
         conn.commit()
+        cursor.close()
     except Exception as e:
         conn.rollback()
-        print(f"Error al actualizar: {e}")
+        print(f"Error al guardar: {e}")
         raise e
     
-def obtener_datos_fila_unica():
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT machine_id, process_name, operator FROM configurador LIMIT 1")
-        return cursor.fetchone()
-    except Exception as e:
-        print(f"Error: {e}")
-        return None
-
 def select_configurador():
     cursor = conn.cursor()
 
@@ -106,6 +101,17 @@ def select_configurador():
     cursor.close()
     return data
 
+def obtener_url_api():
+    """Busca la URL en la tabla url_data"""
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT url_data FROM url_data LIMIT 1")
+        res = cursor.fetchone()
+        cursor.close()
+        return res[0] if res else None
+    except:
+        return None
+    
 def insert_attribute(name, unit, upper, lower, value, create_registration):
     cursor = conn.cursor()
     sql = """

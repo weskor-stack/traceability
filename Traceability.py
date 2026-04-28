@@ -24,8 +24,7 @@ import time
 import platform
 import logging
 import traceback
-import Attributes
-import Type_test
+
 
 def configurar_logging():
     """Configura el sistema de logging"""

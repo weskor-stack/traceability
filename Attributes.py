@@ -1,44 +1,70 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import conexion
 import importlib
 importlib.reload(conexion)
 from datetime import datetime
 
+# --- COLORES Y FUENTES DE LA ESTÉTICA ---
+BG_HEADER      = "#1565C0"  # Azul fuerte
+BG_BUTTON_BAR  = "#F3F3F3"  # Gris claro
+BG_MAIN        = "#FFFFFF"  # Blanco
+FG_WHITE       = "#FFFFFF"  # Texto blanco
+FG_BLUE_LABEL  = "#00479E"  # Azul para textos de etiquetas
+BORDER_COLOR   = "#000000"  # Borde negro
+BTN_GREEN      = "#1D8A21"
+BTN_RED        = "#D32F2F"
+
+FONT_HEAD      = ("Segoe UI", 18, "bold")
+FONT_SUBHEAD   = ("Segoe UI", 10)
+FONT_LABEL     = ("Segoe UI", 8, "bold")
+FONT_MONO      = ("Consolas", 10)
+FONT_BTN       = ("Segoe UI", 9, "bold")
+
 class FormularioPrincipal:
     def __init__(self, root):
         self.root = root
         self.root.title("Attributes")
-        self.root.geometry("900x500")
-        self.root.iconbitmap("favicon.ico")
+        self.root.geometry("900x550")
+        self.root.configure(bg=BG_MAIN)
+        try: self.root.iconbitmap("favicon.ico")
+        except: pass
         self.data = {}
 
-        # ====== ESTILO TABLA ======
+        # ====== ESTILOS ======
         style = ttk.Style()
-        style.theme_use("default")
-        style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"), relief="flat")
-        style.configure("Treeview", rowheight=30, font=("Segoe UI", 10), borderwidth=1, relief="solid")
-        style.map("Treeview", background=[("selected", "#757575")])
+        style.theme_use("clam")
+        style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"), background=BG_BUTTON_BAR, foreground="black", relief="flat")
+        style.configure("Treeview", rowheight=30, font=("Segoe UI", 10), background=BG_MAIN, fieldbackground=BG_MAIN, borderwidth=1, bordercolor=BORDER_COLOR)
+        # Resaltado azul suave al seleccionar una fila
+        style.map("Treeview", background=[("selected", "#D0E8FF")], foreground=[("selected", "black")])
 
-        # ====== BOTONES ======
-        frame_botones = tk.Frame(root)
-        frame_botones.pack(pady=10)
+        # ====== HEADER (Banda azul) ======
+        header = tk.Frame(self.root, bg=BG_HEADER)
+        header.pack(fill="x")
+        
+        tk.Label(header, text="⚙ Gestión de Atributos", font=FONT_HEAD, bg=BG_HEADER, fg=FG_WHITE).pack(anchor="w", padx=24, pady=(20, 5))
+        tk.Label(header, text="Administración de límites y valores esperados.", font=FONT_SUBHEAD, bg=BG_HEADER, fg=FG_WHITE).pack(anchor="w", padx=24, pady=(0, 20))
 
-        tk.Button(frame_botones, text="Agregar", font=("Segoe UI Emoji", 10),
-                  bg="#1D8A21", fg="white", width=12,
-                  command=self.abrir_agregar).grid(row=0, column=0, padx=5)
+        # ====== BOTONES (Banda gris) ======
+        frame_botones = tk.Frame(self.root, bg=BG_BUTTON_BAR)
+        frame_botones.pack(fill="x")
 
-        tk.Button(frame_botones, text="Actualizar", font=("Segoe UI Emoji", 10),
-                  bg="#105FA0", fg="white", width=12,
-                  command=self.abrir_actualizar).grid(row=0, column=1, padx=5)
+        # Contenedor interno para los botones
+        btn_inner = tk.Frame(frame_botones, bg=BG_BUTTON_BAR)
+        btn_inner.pack(side="left", padx=24, pady=10)
 
-        tk.Button(frame_botones, text="Eliminar", font=("Segoe UI Emoji", 10),
-                  bg="#f44336", fg="white", width=12,
-                  command=self.eliminar).grid(row=0, column=2, padx=5)
+        # Botones con diseño plano
+        tk.Button(btn_inner, text="➕ Agregar", font=FONT_BTN, bg=BTN_GREEN, fg="white", relief="flat", cursor="hand2", padx=15, pady=5, command=self.abrir_agregar).grid(row=0, column=0, padx=(0, 10))
+        tk.Button(btn_inner, text="✏️ Actualizar", font=FONT_BTN, bg=BG_HEADER, fg="white", relief="flat", cursor="hand2", padx=15, pady=5, command=self.abrir_actualizar).grid(row=0, column=1, padx=10)
+        tk.Button(btn_inner, text="🗑️ Eliminar", font=FONT_BTN, bg=BTN_RED, fg="white", relief="flat", cursor="hand2", padx=15, pady=5, command=self.eliminar).grid(row=0, column=2, padx=10)
 
         # ====== TABLA ======
+        tabla_frame = tk.Frame(self.root, bg=BG_MAIN)
+        tabla_frame.pack(fill="both", expand=True, padx=24, pady=20)
+
         self.tabla = ttk.Treeview(
-            root,
+            tabla_frame,
             columns=("Nombre", "Lower", "Upper", "Value"),
             show="headings",
             selectmode="browse"
@@ -48,14 +74,16 @@ class FormularioPrincipal:
         self.tabla.heading("Lower", text="Lower-limit")
         self.tabla.heading("Upper", text="Upper-limit")
         self.tabla.heading("Value", text="Value_expected")
+        
         self.tabla.column("Nombre", width=180)
         self.tabla.column("Lower", width=120, anchor="center")
         self.tabla.column("Upper", width=120, anchor="center")
         self.tabla.column("Value", width=150, anchor="center")
-        self.tabla.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        self.tabla.pack(fill="both", expand=True)
 
-        self.tabla.tag_configure("par", background="#f9f9f9")
-        self.tabla.tag_configure("impar", background="#ffffff")
+        self.tabla.tag_configure("par", background="#F9F9F9")
+        self.tabla.tag_configure("impar", background="#FFFFFF")
 
         self.cargar_datos()
 
@@ -64,106 +92,117 @@ class FormularioPrincipal:
         self.tabla.delete(*self.tabla.get_children())
         self.data.clear()
 
-        registros = conexion.select_attributes()
+        try:
+            registros = conexion.select_attributes()
+            for i, registro in enumerate(registros):
+                tag = "par" if i % 2 == 0 else "impar"
+                item = self.tabla.insert("", "end", values=(
+                    registro[1],  
+                    registro[4],  
+                    registro[3],  
+                    registro[5], 
+                ), tags=(tag,))
 
-        for i, registro in enumerate(registros):
-            tag = "par" if i % 2 == 0 else "impar"
-            item = self.tabla.insert("", "end", values=(
-                registro[1],  
-                registro[4],  
-                registro[3],  
-                registro[5], 
-            ), tags=(tag,))
-
-            self.data[item] = {
-                "attribute_id":        registro[0],
-                "name":                registro[1],
-                "unit":                registro[2],
-                "upper_limit":         registro[3],
-                "lower_limit":         registro[4],
-                "value_expected":      registro[5],
-                "create_registration": registro[7],
-            }
+                self.data[item] = {
+                    "attribute_id":        registro[0],
+                    "name":                registro[1],
+                    "unit":                registro[2],
+                    "upper_limit":         registro[3],
+                    "lower_limit":         registro[4],
+                    "value_expected":      registro[5],
+                    "create_registration": registro[7],
+                }
+        except Exception as e:
+            print(f"Error al cargar datos: {e}")
 
     # ====== FUNCIONES ======
     def abrir_agregar(self):
         VentanaFormulario(self, "Agregar")
-        self.root.iconbitmap("favicon.ico")
 
     def abrir_actualizar(self):
         selected = self.tabla.selection()
         if not selected:
+            messagebox.showwarning("Atención", "Seleccione un registro para actualizar.")
             return
         selected = selected[0]
         datos = self.data[selected]
         VentanaFormulario(self, "Actualizar", selected, datos)
 
     def agregar_datos(self, datos):
-        attribute_id = conexion.insert_attribute(
-            datos["name"],
-            datos["unit"],
-            datos["upper_limit"],
-            datos["lower_limit"],
-            datos["value_expected"],
-            datos["create_registration"]
-        )
+        try:
+            attribute_id = conexion.insert_attribute(
+                datos["name"],
+                datos["unit"],
+                datos["upper_limit"],
+                datos["lower_limit"],
+                datos["value_expected"],
+                datos["create_registration"]
+            )
 
-        datos["attribute_id"] = attribute_id
+            datos["attribute_id"] = attribute_id
 
-        count = len(self.tabla.get_children())
-        tag = "par" if count % 2 == 0 else "impar"
+            count = len(self.tabla.get_children())
+            tag = "par" if count % 2 == 0 else "impar"
 
-        item = self.tabla.insert("", "end", values=(
-            datos["name"],
-            datos["lower_limit"],
-            datos["upper_limit"],
-            datos["value_expected"],
-        ), tags=(tag,))
+            item = self.tabla.insert("", "end", values=(
+                datos["name"],
+                datos["lower_limit"],
+                datos["upper_limit"],
+                datos["value_expected"],
+            ), tags=(tag,))
 
-        self.data[item] = datos
+            self.data[item] = datos
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo agregar: {e}")
 
     def actualizar_datos(self, item, datos):
-        attribute_id = self.data[item]["attribute_id"]
+        try:
+            attribute_id = self.data[item]["attribute_id"]
 
-        conexion.update_attribute(
-            attribute_id,
-            datos["name"],
-            datos["unit"],
-            datos["upper_limit"],
-            datos["lower_limit"],
-            datos["value_expected"],
-        )
+            conexion.update_attribute(
+                attribute_id,
+                datos["name"],
+                datos["unit"],
+                datos["upper_limit"],
+                datos["lower_limit"],
+                datos["value_expected"],
+            )
 
-        self.tabla.item(item, values=(
-            datos["name"],
-            datos["lower_limit"],
-            datos["upper_limit"],
-            datos["value_expected"],
-        ))
+            self.tabla.item(item, values=(
+                datos["name"],
+                datos["lower_limit"],
+                datos["upper_limit"],
+                datos["value_expected"],
+            ))
 
-        datos["attribute_id"] = attribute_id
-        self.data[item] = datos
+            datos["attribute_id"] = attribute_id
+            self.data[item] = datos
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo actualizar: {e}")
 
     def eliminar(self):
         selected = self.tabla.selection()
         if not selected:
-            print("No hay fila seleccionada")
+            messagebox.showwarning("Atención", "Seleccione un registro para eliminar.")
             return
 
         selected = selected[0]
 
         if selected not in self.data:
-            print("No existe en self.data")
             return
 
         attribute_id = self.data[selected].get("attribute_id")
         if not attribute_id:
-            print("No se encontró el attribute_id")
             return
 
-        conexion.delete_attribute(attribute_id)
-        self.tabla.delete(selected)
-        del self.data[selected]
+        respuesta = messagebox.askyesno("Confirmar", "¿Está seguro de que desea eliminar este registro?")
+        if respuesta:
+            try:
+                conexion.delete_attribute(attribute_id)
+                self.tabla.delete(selected)
+                del self.data[selected]
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo eliminar: {e}")
 
 
 class VentanaFormulario:
@@ -171,10 +210,22 @@ class VentanaFormulario:
         self.principal = principal
         self.modo = modo
         self.item = item
-        self.ventana = tk.Toplevel()
-        self.ventana.title(f" {modo} Registro")
-        self.ventana.geometry("350x320")
-        self.ventana.iconbitmap("favicon.ico")
+        
+        self.ventana = tk.Toplevel(principal.root)
+        self.ventana.title(f"{modo} Registro")
+        self.ventana.geometry("380x480") # <- AUMENTÉ EL ALTO PARA QUE QUEPA TODO BIEN
+        self.ventana.configure(bg=BG_MAIN)
+        try: self.ventana.iconbitmap("favicon.ico")
+        except: pass
+
+        # --- Encabezado de la ventana emergente ---
+        header = tk.Frame(self.ventana, bg=BG_HEADER)
+        header.pack(fill="x")
+        tk.Label(header, text=f"📋 {modo} Atributo", font=("Segoe UI", 14, "bold"), bg=BG_HEADER, fg=FG_WHITE).pack(anchor="w", padx=20, pady=15)
+
+        # --- Contenedor del formulario ---
+        form_frame = tk.Frame(self.ventana, bg=BG_MAIN)
+        form_frame.pack(fill="both", expand=True, padx=30, pady=(15, 0))
 
         # Variables
         self.nombre = tk.StringVar()
@@ -183,7 +234,6 @@ class VentanaFormulario:
         self.upper = tk.StringVar()
         self.value = tk.StringVar()
 
-        # Cargar datos si es actualizar
         if datos:
             self.nombre.set(datos["name"])
             self.unit.set(datos["unit"])
@@ -191,23 +241,33 @@ class VentanaFormulario:
             self.upper.set(datos["upper_limit"])
             self.value.set(datos["value_expected"])
 
-        # Campos
-        tk.Label(self.ventana, text="Nombre").pack(pady=2)
-        tk.Entry(self.ventana, textvariable=self.nombre).pack()
-        tk.Label(self.ventana, text="Unit").pack(pady=2)
-        tk.Entry(self.ventana, textvariable=self.unit).pack()
-        tk.Label(self.ventana, text="Lower-limit").pack(pady=2)
-        tk.Entry(self.ventana, textvariable=self.lower).pack()
-        tk.Label(self.ventana, text="Upper-limit").pack(pady=2)
-        tk.Entry(self.ventana, textvariable=self.upper).pack()
-        tk.Label(self.ventana, text="Value_expected").pack(pady=2)
-        tk.Entry(self.ventana, textvariable=self.value).pack()
+        # Configuración común para Entradas (Borde plano, Consolas)
+        entry_kwargs = {"bg": BG_MAIN, "fg": "black", "relief": "flat", "font": FONT_MONO, 
+                        "highlightthickness": 1, "highlightbackground": BORDER_COLOR, "highlightcolor": BG_HEADER}
 
-        tk.Button(self.ventana, text=" Guardar", font=("Segoe UI Emoji", 10),
-                  bg="#228F26", fg="white", width=15,
-                  command=self.guardar).pack(pady=15)
+        # Campos
+        self.crear_campo(form_frame, "Nombre", self.nombre)
+        self.crear_campo(form_frame, "Unit", self.unit)
+        self.crear_campo(form_frame, "Lower-limit", self.lower)
+        self.crear_campo(form_frame, "Upper-limit", self.upper)
+        self.crear_campo(form_frame, "Value_expected", self.value)
+
+        # Botón Guardar (Corregido para que se coloque al fondo de manera natural)
+        btn_frame = tk.Frame(self.ventana, bg=BG_BUTTON_BAR)
+        btn_frame.pack(fill="x")
+        tk.Button(btn_frame, text="💾 Guardar", font=FONT_BTN, bg=BTN_GREEN, fg="white", relief="flat", cursor="hand2", padx=20, pady=6, command=self.guardar).pack(pady=10)
+
+    def crear_campo(self, parent, texto, variable):
+        tk.Label(parent, text=texto.upper(), bg=BG_MAIN, fg=FG_BLUE_LABEL, font=FONT_LABEL).pack(anchor="w", pady=(5, 0))
+        entry = tk.Entry(parent, textvariable=variable, bg=BG_MAIN, fg="black", relief="flat", font=FONT_MONO, highlightthickness=1, highlightbackground=BORDER_COLOR, highlightcolor=BG_HEADER)
+        entry.pack(fill="x", ipady=4, pady=(2, 10))
 
     def guardar(self):
+        # Validar campos vacíos
+        if not all([self.nombre.get(), self.lower.get(), self.upper.get(), self.value.get()]):
+            messagebox.showwarning("Incompleto", "Por favor, llene los campos principales.")
+            return
+
         datos = {
             "name":                self.nombre.get(),
             "unit":                self.unit.get(),
