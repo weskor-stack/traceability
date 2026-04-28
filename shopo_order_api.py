@@ -345,7 +345,6 @@ def listar_archivos_existentes(directorio=""):
     
     return archivos
 
-
 # ==================== CONFIGURACIÓN PRINCIPAL ====================
 
 # if __name__ == "__main__":
