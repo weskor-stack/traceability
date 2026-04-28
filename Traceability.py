@@ -125,11 +125,18 @@ def abrir_configurador():
     try:
         ventana = ctk.CTkToplevel(root)
         ventana.title("Configurador")   
-        try:
-            ventana.iconbitmap("favicon.ico")
-        except:
-            pass 
         ventana.attributes("-topmost", True)
+        ruta_icono = os.path.abspath("favicon.ico")
+        def forzar_icono():
+            try:
+                ventana.wm_iconbitmap(ruta_icono)
+                ventana.iconbitmap(ruta_icono)
+            except Exception as e:
+                print(f"Error forzando icono: {e}")
+        
+        ventana.after(250, forzar_icono)
+        # ----------------------------------------
+
         from Configurador import ConfiguradorUI
         app_config = ConfiguradorUI(ventana)
         
