@@ -59,7 +59,7 @@ class ConfiguradorUI:
         header = tk.Frame(self.root, bg=BG_HEADER)
         header.pack(fill="x")
         
-        tk.Label(header, text="⚙ Configurador de APIs", font=FONT_HEAD, bg=BG_HEADER, fg=FG_WHITE).pack(anchor="w", padx=24, pady=(20, 5))
+        tk.Label(header, text="⚙ Configurador", font=FONT_HEAD, bg=BG_HEADER, fg=FG_WHITE).pack(anchor="w", padx=24, pady=(20, 5))
         
         self.subtitle_var = tk.StringVar(value="Estación activa: Ninguna — Todos los campos son obligatorios.")
         tk.Label(header, textvariable=self.subtitle_var, font=FONT_SUBHEAD, bg=BG_HEADER, fg=FG_WHITE).pack(anchor="w", padx=24, pady=(0, 20))
