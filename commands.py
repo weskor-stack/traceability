@@ -22,6 +22,11 @@ leak2 = "commit,Leak,Numeric,14.25,PASSED,psi,DESCRIPCION,1.0,1.0,Leak,P2173404-
 temperatura = "commit,Temperature,start (timestamp),salida al proceso (timestamp),temp_inicial,temp_final,unit,descripcion,extra1,extra2,P2173404-00-C:SEYU26061A0765,1/"
 welding = 'commit,Welding,welding_time,welding_power,100,mm,PASSED,description,P2173404-00-C:SEYU26061A0765,1/'
 
+heatstake = 'commit,Heatstake,heatstake,cicle_time,serial_number(P2173404-00-C:SEYU26061A0765),program_name,times_tamp,grade,description,1/'
+heatstake = "commit,Heatstake,heatstake,cicle_time,P2173404-00-C:SEYU26061A0765,program_name,times_tamp,grade,description,1/"
+
+graph_image = 'commit,Graph,graph,data_image,description,P2173404-00-C:SEYU26061A0765,1/'
+
 cadenas = temperatura.split(',')
 # print(len(cadenas))
 name = "P2173404-00-C:SEYU26061A0765"
@@ -669,8 +674,50 @@ def commit(cadena, name_piece):
                 return "PASSED",data_for_table
             else:
                 return "FAILED",[]
+        
+        case "Heatstake":
+            if len(options) == 11:
+                commits = conexion.parameters_heatstake(options)
+                print(commits)
+                if commits == 'FAILED':
+                    return "FAILED", []
+                else:
+                    data_for_table.append([
+                        options[1],  # Measurement
+                        options[3],  # Value
+                        options[5],  # Lower limit
+                        options[6],  # Upper limit
+                        "-",         # Type
+                        options[5],  # Unit
+                        "-"          # Result
+                    ])
+                return "PASSED",data_for_table
+            else:
+                return "FAILED",[]
+            
+        case "Graph":
+            if len(options) == 8:
+                commits = conexion.parameters_graph(options)
+                print(commits)
+                if commits == 'FAILED':
+                    return "FAILED", []
+                else:
+                    data_for_table.append([
+                        options[1],  # Measurement
+                        options[3],  # Value
+                        "-",         # Lower limit
+                        "-",         # Upper limit
+                        "-",         # Type
+                        "-",         # Unit
+                        "-"          # Result
+                    ])
+                return "PASSED",data_for_table
+            else:
+                return "FAILED",[]
+            
         case _:
             # print("default")
             return "FAILED",[]
+            
 
-# commit(electrical,name)
+# commit(graph_image,name)

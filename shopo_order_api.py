@@ -336,10 +336,17 @@ def listar_archivos_existentes(directorio=""):
     archivos = glob.glob(patron)
     
     if archivos:
+<<<<<<< HEAD
         print(f"\n📁 Archivos shop_order encontrados:")
         for archivo in archivos:
             tamaño = os.path.getsize(archivo)
             print(f"   - {os.path.basename(archivo)} ({tamaño} bytes)")
+=======
+        # print(f"\n📁 Archivos shop_order encontrados:")
+        for archivo in archivos:
+            tamaño = os.path.getsize(archivo)
+            # print(f"   - {os.path.basename(archivo)} ({tamaño} bytes)")
+>>>>>>> 320bf6b4dc71d8e1a424c0993c51ddf723e884ff
     else:
         print(f"\n✓ No hay archivos shop_order existentes")
     
@@ -348,6 +355,7 @@ def listar_archivos_existentes(directorio=""):
 
 # ==================== CONFIGURACIÓN PRINCIPAL ====================
 
+<<<<<<< HEAD
 if __name__ == "__main__":
     print("=" * 60)
     print("🚀 SISTEMA DE EXTRACCIÓN DE DATOS DE API")
@@ -372,6 +380,33 @@ if __name__ == "__main__":
     print("\nEjecutando consulta a API real...")
     
     exito, nombre, cantidad = consultar_api_y_guardar(URL_API, SOP_ORDER)
+=======
+# if __name__ == "__main__":
+    # print("=" * 60)
+    # print("🚀 SISTEMA DE EXTRACCIÓN DE DATOS DE API")
+    # print("📊 CON ORDENAMIENTO ASCENDENTE POR SERIAL_NUMBER")
+    # print("🗑️  ELIMINA TODOS LOS SHOP_ORDER ANTERIORES")
+    # print("=" * 60)
+    # print(f"📅 Fecha de ejecución: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    # print("=" * 60)
+    
+    # Mostrar archivos existentes antes de comenzar
+    # print("\n📋 Archivos existentes ANTES de la ejecución:")
+    # listar_archivos_existentes()
+    
+    
+    # ===== USO CON API REAL =====
+    # print("-" * 40)
+    
+    # Ejemplo de uso con API real
+    # URL_API = "http://localhost:8000/custom-api/p2480dc1/units/in-locations/by-pn-so?shortstation=FLPA&shoporderno="
+    # SOP_ORDER = "SO0012"
+    # print(f"📝 URL a consultar: {URL_API}{SOP_ORDER}")
+    # print("\nEjecutando consulta a API real...")
+    
+    # Descomentar la siguiente línea para ejecutar con la API real
+    # exito, nombre, cantidad = consultar_api_y_guardar(URL_API, SOP_ORDER)
+>>>>>>> 320bf6b4dc71d8e1a424c0993c51ddf723e884ff
     
     # if exito:
     #     print(f"\n✅ Proceso completado exitosamente!")
@@ -383,6 +418,12 @@ if __name__ == "__main__":
     #     print(f"\n❌ Error en el proceso de consulta a la API")
     #     print("   (Esto es normal si el servidor no está ejecutándose)")
     
+<<<<<<< HEAD
     print("\n" + "=" * 60)
     print("✅ FIN DEL PROCESO")
     print("=" * 60)
+=======
+    # print("\n" + "=" * 60)
+    # print("✅ FIN DEL PROCESO")
+    # print("=" * 60)
+>>>>>>> 320bf6b4dc71d8e1a424c0993c51ddf723e884ff

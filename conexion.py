@@ -399,7 +399,7 @@ def stations():
     with conn.cursor() as cur:
         cur.execute('''SELECT station_id, station_key, station_name, status_id, type_station.ts_id, type_station.ts_name AS Name 
                        FROM station 
-                       INNER JOIN data_tracking.type_station ON type_station.ts_id = station.ts_id
+                       INNER JOIN data_tracking_qwert.type_station ON type_station.ts_id = station.ts_id
                        WHERE status_id = 1''')
         result = cur.fetchone()  # Solo el primero
     return result
@@ -416,7 +416,7 @@ def parameters_pressfit(element, name_piece):
     with conn.cursor() as cur:
         # Obtener medición
         cur.execute(
-            "SELECT pressfit_measurement_id, name FROM data_tracking.pressfit_measurement WHERE `key` = %s",
+            "SELECT pressfit_measurement_id, name FROM data_tracking_qwert.pressfit_measurement WHERE `key` = %s",
             (element[0],)
         )
         measurement = cur.fetchone()
@@ -427,7 +427,7 @@ def parameters_pressfit(element, name_piece):
         cur.execute('''
             SELECT station_id, station_key, station_name 
             FROM station
-            INNER JOIN data_tracking.type_station ON type_station.ts_id = station.ts_id
+            INNER JOIN data_tracking_qwert.type_station ON type_station.ts_id = station.ts_id
             WHERE status_id = 1
             LIMIT 1
         ''')
@@ -437,7 +437,7 @@ def parameters_pressfit(element, name_piece):
 
         # Obtener parte activa
         cur.execute(
-            "SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,)
+            "SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(name_piece,)
         )
         part = cur.fetchone()
         if not part:
@@ -446,6 +446,8 @@ def parameters_pressfit(element, name_piece):
         value = element[1]
         low_limit = element[2]
         high_limit = element[3]
+        if value == "" and low_limit == "" and high_limit == "":
+            return "GENERAL_ERROR"
         data_type = element[4]
         units = element[5]
         result = element[6]
@@ -511,7 +513,7 @@ def parameters_screwing(element, name_piece):
 
         # Obtener part_id
         cursor = conn.cursor()
-        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,))
+        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(name_piece,))
         part = cursor.fetchone()
         cursor.close()
 
@@ -597,7 +599,7 @@ def parameters_inspection_vs(element, name_piece):
 
         # Obtener part
         cursor = conn.cursor()
-        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,))
+        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(name_piece,))
         part = cursor.fetchone()
         cursor.close()
 
@@ -660,7 +662,7 @@ def parameters_inspection_xt(element, name_piece):
         cursor = conn.cursor()
         cursor.execute("""
             SELECT inspection_measurement_id, name 
-            FROM data_tracking.inspection_measurement 
+            FROM data_tracking_qwert.inspection_measurement 
             WHERE inspection_measurement.key = ?
         """, (element[0],))
         measurement = cursor.fetchone()
@@ -675,7 +677,7 @@ def parameters_inspection_xt(element, name_piece):
         cursor.execute("""
             SELECT station_id, station_key, station_name 
             FROM station 
-            INNER JOIN data_tracking.type_station ON type_station.ts_id = station.ts_id
+            INNER JOIN data_tracking_qwert.type_station ON type_station.ts_id = station.ts_id
             WHERE status_id = 1
         """)
         station = cursor.fetchone()
@@ -687,7 +689,7 @@ def parameters_inspection_xt(element, name_piece):
 
         # Obtener part
         cursor = conn.cursor()
-        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,))
+        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(name_piece,))
         part = cursor.fetchone()
         cursor.close()
 
@@ -747,7 +749,7 @@ def parameters_electrical(element, name_piece):
         cursor = conn.cursor()
         cursor.execute("""
             SELECT electrical_measurement_id, name 
-            FROM data_tracking.electrical_measurement 
+            FROM data_tracking_qwert.electrical_measurement 
             WHERE electrical_measurement.key = ?
         """, (element[0],))
         measurement = cursor.fetchone()
@@ -762,7 +764,7 @@ def parameters_electrical(element, name_piece):
         cursor.execute("""
             SELECT station_id, station_name 
             FROM station 
-            INNER JOIN data_tracking.type_station ON type_station.ts_id = station.ts_id
+            INNER JOIN data_tracking_qwert.type_station ON type_station.ts_id = station.ts_id
             WHERE station.status_id = 1
             LIMIT 1
         """)
@@ -775,7 +777,7 @@ def parameters_electrical(element, name_piece):
 
         # Obtener parte
         cursor = conn.cursor()
-        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,))
+        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(name_piece,))
         part = cursor.fetchone()
         cursor.close()
 
@@ -836,7 +838,7 @@ def duration(element, name_piece):
         # Obtener estación activa
         with conn.cursor() as cursor:
             cursor.execute('''SELECT station_id FROM station 
-                              INNER JOIN data_tracking.type_station ON type_station.ts_id = station.ts_id
+                              INNER JOIN data_tracking_qwert.type_station ON type_station.ts_id = station.ts_id
                               WHERE status_id = 1 LIMIT 1''')
             station = cursor.fetchone()
             if not station:
@@ -846,7 +848,7 @@ def duration(element, name_piece):
 
         # Obtener parte activa
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s", (name_piece,))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC", (name_piece,))
             part = cursor.fetchone()
             if not part:
                 # print("[ERROR] Pieza no encontrada")
@@ -887,7 +889,7 @@ def duration(element, name_piece):
 def pieces(parte):
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 2 AND part_number = %s LIMIT 1",(parte,))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 2 AND part_number = %s ORDER BY part_id DESC LIMIT 1",(parte,))
             part = cursor.fetchone()
             if not part:
                 return None  # O podrías lanzar una excepción si prefieres
@@ -903,7 +905,7 @@ def duration_json(station_id, part_id):
     try:
         with conn.cursor() as cursor:
             cursor.execute(
-                "SELECT taskresult, tasktimestamp, taskduration, metadata FROM duration WHERE station_id = %s AND part_id = %s ORDER BY duration_id DESC LIMIT 1",
+                "SELECT taskresult, tasktimestamp, taskduration, metadata, create_registration FROM duration WHERE station_id = %s AND part_id = %s ORDER BY duration_id DESC LIMIT 1",
                 (station_id, part_id)
             )
             result = cursor.fetchone()
@@ -939,7 +941,7 @@ def inspection_data(part_id):
                             ORDER BY test_time DESC
                         ) AS rn
                     FROM parameters_inspection 
-                    INNER JOIN data_tracking.inspection_measurement 
+                    INNER JOIN data_tracking_qwert.inspection_measurement 
                         ON inspection_measurement.inspection_measurement_id = parameters_inspection.inspection_measurement_id
                     WHERE part_id = %s
                 ) t
@@ -971,7 +973,7 @@ def screwing_data(part_id):
                     description, 
                     screwing_measurement.name 
                 FROM parameters_screwing 
-                INNER JOIN data_tracking.screwing_measurement 
+                INNER JOIN data_tracking_qwert.screwing_measurement 
                     ON screwing_measurement.screwing_measurement_id = parameters_screwing.screwing_measurement_id
                 WHERE part_id = %s
                 ORDER BY parameters_screwing_id ASC
@@ -1001,10 +1003,10 @@ def pressfit_data(part_id):
                     pressfit_measurement.name, 
                     dwell_time 
                 FROM parameters_pressfit 
-                INNER JOIN data_tracking.pressfit_measurement 
+                INNER JOIN data_tracking_qwert.pressfit_measurement 
                     ON pressfit_measurement.pressfit_measurement_id = parameters_pressfit.pressfit_measurement_id
                 WHERE part_id = %s
-                ORDER BY parameters_pressfit_id DESC
+                ORDER BY parameters_pressfit_id ASC
                 
             ''', (part_id,))
             return cursor.fetchall()
@@ -1030,7 +1032,7 @@ def electrical_data(part_id):
                     description, 
                     electrical_measurement.name 
                 FROM parameters_electrical
-                INNER JOIN data_tracking.electrical_measurement 
+                INNER JOIN data_tracking_qwert.electrical_measurement 
                     ON electrical_measurement.electrical_measurement_id = parameters_electrical.electrical_measurement_id
                 WHERE part_id = %s
                 ORDER BY parameters_electrical_id DESC
@@ -1115,6 +1117,48 @@ def welding_data(part_id):
         # print(f"[ERROR] electrical_data(): {e}")
         return []
     
+def heatstake_data(part_id):
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                SELECT 
+                    part_id, 
+                    cicle_time, 
+                    serial_number, 
+                    program_name,
+                    times_tamp,
+                    grade,
+                    description,
+                    create_registration
+                FROM heatstake
+                WHERE part_id = %s
+                ORDER BY heatstake_id ASC
+            ''', (part_id,))
+            # print(cursor.fetchall())
+            return cursor.fetchall()
+    except Exception as e:
+        # print(f"[ERROR] electrical_data(): {e}")
+        return []
+    
+def graph_data(part_id):
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                SELECT 
+                    part_id, 
+                    data_image, 
+                    description,
+                    create_registration
+                FROM graph_image
+                WHERE part_id = %s
+                ORDER BY graph_image_id ASC
+            ''', (part_id,))
+            # print(cursor.fetchall())
+            return cursor.fetchall()
+    except Exception as e:
+        # print(f"[ERROR] electrical_data(): {e}")
+        return []
+    
 def temperature_data(part_id):
     try:
         with conn.cursor() as cursor:
@@ -1142,7 +1186,8 @@ def component_data(part_id):
         with conn.cursor() as cursor:
             cursor.execute('''
                 SELECT 
-                    component_name
+                    component_name,
+                    description
                 FROM component
                 WHERE part_id = %s
                 ORDER BY component_id ASC
@@ -1173,7 +1218,7 @@ def screwing_data3(part_id, limite):
                     description, 
                     screwing_measurement.name 
                 FROM parameters_screwing 
-                INNER JOIN data_tracking.screwing_measurement 
+                INNER JOIN data_tracking_qwert.screwing_measurement 
                     ON screwing_measurement.screwing_measurement_id = parameters_screwing.screwing_measurement_id
                 WHERE part_id = %s
                 ORDER BY screwing_measurement_id DESC
@@ -1203,7 +1248,7 @@ def pressfit_data3(part_id,limite):
                     pressfit_measurement.name, 
                     dwell_time 
                 FROM parameters_pressfit 
-                INNER JOIN data_tracking.pressfit_measurement 
+                INNER JOIN data_tracking_qwert.pressfit_measurement 
                     ON pressfit_measurement.pressfit_measurement_id = parameters_pressfit.pressfit_measurement_id
                 WHERE part_id = %s
                 ORDER BY pressfit_measurement_id DESC
@@ -1232,11 +1277,10 @@ def inspection_data3(part_id):
                     description, 
                     inspection_measurement.name 
                 FROM parameters_inspection 
-                INNER JOIN data_tracking.inspection_measurement 
+                INNER JOIN data_tracking_qwert.inspection_measurement 
                     ON inspection_measurement.inspection_measurement_id = parameters_inspection.inspection_measurement_id
                 WHERE part_id = %s
-                ORDER BY parameters_inspection_id DESC
-                LIMIT 14
+                ORDER BY parameters_inspection_id ASC
             ''', (part_id,))
             return cursor.fetchall()
     except Exception as e:
@@ -1261,7 +1305,7 @@ def electrical_data3(part_id,limite):
                     description, 
                     electrical_measurement.name 
                 FROM parameters_electrical
-                INNER JOIN data_tracking.electrical_measurement 
+                INNER JOIN data_tracking_qwert.electrical_measurement 
                     ON electrical_measurement.electrical_measurement_id = parameters_electrical.electrical_measurement_id
                 WHERE part_id = %s
                 ORDER BY electrical_measurement_id DESC
@@ -1396,7 +1440,7 @@ def inspection_data2(part_id):
     try:
         inspectionJson = conn.cursor()
         inspectionJson.execute('''SELECT inspection_measurement.name, value, low_limit, high_limit, data_type, unit, result, compoperator, test_time, metadata, description, parameters_inspection.inspection_measurement_id FROM parameters_inspection 
-                            inner JOIN data_tracking.inspection_measurement ON inspection_measurement.inspection_measurement_id = parameters_inspection.inspection_measurement_id
+                            inner JOIN data_tracking_qwert.inspection_measurement ON inspection_measurement.inspection_measurement_id = parameters_inspection.inspection_measurement_id
                             WHERE part_id = '''+"'"+str(part_id)+"' ORDER BY parameters_inspection_id DESC LIMIT 4")
         results =inspectionJson.fetchall()
         for x in results:
@@ -1416,7 +1460,7 @@ def screwing_data2(part_id):
     try:
         screwingJson = conn.cursor()
         screwingJson.execute('''SELECT screwing_measurement.name, value, low_limit, high_limit, data_type, unit, result, compoperator, test_time, metadata, description, parameters_screwing.screwing_measurement_id FROM parameters_screwing 
-                            inner JOIN data_tracking.screwing_measurement ON screwing_measurement.screwing_measurement_id = parameters_screwing.screwing_measurement_id
+                            inner JOIN data_tracking_qwert.screwing_measurement ON screwing_measurement.screwing_measurement_id = parameters_screwing.screwing_measurement_id
                             WHERE part_id = '''+"'"+str(part_id)+"' ORDER BY parameters_screwing_id DESC LIMIT 4")
         results =screwingJson.fetchall()
         for x in results:
@@ -1435,7 +1479,7 @@ def pressfit_data2(part_id):
     try:
         pressfitJson = conn.cursor()
         pressfitJson.execute('''SELECT pressfit_measurement.name, value, low_limit, high_limit, data_type, unit, result, compoperator, test_time, metadata, description, parameters_pressfit.pressfit_measurement_id FROM parameters_pressfit 
-                            inner JOIN data_tracking.pressfit_measurement ON pressfit_measurement.pressfit_measurement_id = parameters_pressfit.pressfit_measurement_id
+                            inner JOIN data_tracking_qwert.pressfit_measurement ON pressfit_measurement.pressfit_measurement_id = parameters_pressfit.pressfit_measurement_id
                             WHERE part_id = '''+"'"+str(part_id)+"' ORDER BY parameters_pressfit_id DESC LIMIT 4")
         results =pressfitJson.fetchall()
         for x in results:
@@ -1455,7 +1499,7 @@ def electrical_data2(part_id):
     try:
         electricalJson = conn.cursor()
         electricalJson.execute('''SELECT electrical_measurement.name, value, low_limit, high_limit, data_type, unit, result, compoperator, test_time, metadata, description, parameters_electrical.electrical_measurement_id FROM parameters_electrical 
-                            inner JOIN data_tracking.electrical_measurement ON electrical_measurement.electrical_measurement_id = parameters_electrical.electrical_measurement_id
+                            inner JOIN data_tracking_qwert.electrical_measurement ON electrical_measurement.electrical_measurement_id = parameters_electrical.electrical_measurement_id
                             WHERE part_id = '''+"'"+str(part_id)+"' ORDER BY parameters_electrical_id DESC LIMIT 7")
         results =electricalJson.fetchall()
         for x in results:
@@ -1474,7 +1518,7 @@ def component_store(component_name,descripcion,parte):
     try:
         # --- Obtener part activo ---
         cursor = conn.cursor()
-        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 1 AND part_number = %s",(parte,))
+        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC LIMIT 1",(parte,))
         part = cursor.fetchone()
         cursor.close()
 
@@ -1518,7 +1562,7 @@ def parameters_continuity(element):
             cursor.execute('''
                 SELECT station_id 
                 FROM station 
-                INNER JOIN data_tracking.type_station 
+                INNER JOIN data_tracking_qwert.type_station 
                     ON type_station.ts_id = station.ts_id
                 WHERE station.status_id = 1
                 LIMIT 1
@@ -1533,7 +1577,7 @@ def parameters_continuity(element):
 
         # Obtener part activo
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(element[9],))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(element[9],))
             part = cursor.fetchone()
         
         if not part:
@@ -1598,7 +1642,7 @@ def parameters_leak(element):
             cursor.execute('''
                 SELECT station_id 
                 FROM station 
-                INNER JOIN data_tracking.type_station 
+                INNER JOIN data_tracking_qwert.type_station 
                     ON type_station.ts_id = station.ts_id
                 WHERE station.status_id = 1
                 LIMIT 1
@@ -1613,7 +1657,7 @@ def parameters_leak(element):
 
         # Obtener part activo
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(element[10],))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(element[10],))
             part = cursor.fetchone()
         
         if not part:
@@ -1670,7 +1714,7 @@ def parameters_temperature(element):
             cursor.execute('''
                 SELECT station_id 
                 FROM station 
-                INNER JOIN data_tracking.type_station 
+                INNER JOIN data_tracking_qwert.type_station 
                     ON type_station.ts_id = station.ts_id
                 WHERE station.status_id = 1
                 LIMIT 1
@@ -1685,7 +1729,7 @@ def parameters_temperature(element):
 
         # Obtener part activo
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(element[10],))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(element[10],))
             part = cursor.fetchone()
         
         if not part:
@@ -1742,7 +1786,7 @@ def parameters_welding(element):
             cursor.execute('''
                 SELECT station_id 
                 FROM station 
-                INNER JOIN data_tracking.type_station 
+                INNER JOIN data_tracking_qwert.type_station 
                     ON type_station.ts_id = station.ts_id
                 WHERE station.status_id = 1
                 LIMIT 1
@@ -1757,7 +1801,7 @@ def parameters_welding(element):
 
         # Obtener part activo
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(element[8],))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(element[8],))
             part = cursor.fetchone()
         
         if not part:
@@ -1800,6 +1844,96 @@ def parameters_welding(element):
         return "FAILED"
     except Exception as e:
         # print(f"[ERROR] parameters_welding(): {e}")
+        return "FAILED"
+
+def parameters_heatstake(element):
+        
+    try:
+        # Obtener part activo
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(element[4],))
+            part = cursor.fetchone()
+        
+        if not part:
+            return "FAILED"
+        
+        part_id = part[0]
+        
+        # Insertar datos en parameters_continuity
+        sql = '''
+            INSERT INTO heatstake (
+                cicle_time, serial_number,
+                program_name, times_tamp, grade, description, part_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        '''
+        
+        val = (
+            element[3],  # cicle_time
+            element[4],  # serial_number
+            element[5],  # program_name
+            element[6],  # times_tamp
+            element[7],  # grade
+            element[8],  # description
+            part_id
+        )
+        
+        # print(f"Valores a insertar: {val}")
+        
+        with conn.cursor() as cursor:
+            cursor.execute(sql, val)
+            conn.commit()
+        
+        # print("[ÉXITO] Datos insertados correctamente en parameters_welding")
+        return "PASSED"
+        
+    except mariadb.Error as e:
+        # print(f"[DB ERROR] parameters_heatstake(): {e}")
+        # NO cierres la conexión aquí
+        return "FAILED"
+    except Exception as e:
+        # print(f"[ERROR] parameters_heatstake(): {e}")
+        return "FAILED"
+
+def parameters_graph(element):
+    try:
+        # Obtener part activo
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(element[5],))
+            part = cursor.fetchone()
+        
+        if not part:
+            return "FAILED"
+        
+        part_id = part[0]
+        
+        # Insertar datos en parameters_continuity
+        sql = '''
+            INSERT INTO graph_image (
+                part_id, data_image, description
+            ) VALUES (?, ?, ?)
+        '''
+        
+        val = (
+            part_id,
+            element[3],  # data_image
+            element[4],  # description
+        )
+        
+        # print(f"Valores a insertar: {val}")
+        
+        with conn.cursor() as cursor:
+            cursor.execute(sql, val)
+            conn.commit()
+        
+        # print("[ÉXITO] Datos insertados correctamente en parameters_welding")
+        return "PASSED"
+        
+    except mariadb.Error as e:
+        # print(f"[DB ERROR] parameters_heatstake(): {e}")
+        # NO cierres la conexión aquí
+        return "FAILED"
+    except Exception as e:
+        # print(f"[ERROR] parameters_heatstake(): {e}")
         return "FAILED"
 
 ############################################### CONFIGURADOR ####################################################
@@ -2182,8 +2316,193 @@ def get_part_numbers(numero):
     
     return "PASSED"
     
+################################################################# Configurador ###########################################################################
 
+def configurador():
+    
+    # Obtener configuración actual
+    cursor = conn.cursor()
+    cursor.execute("SELECT machine_id, process_name, operator, station, product, shop_order FROM configurador")
+    configurador = cursor.fetchone()
+    cursor.close()
+
+    if not configurador:
+        print("[ERROR] No se encontró configuración activa.")
+        
+        return "FAILED"
+    
+    return configurador
+
+
+################################################################# Atributos ###########################################################################
+
+def atributos():
+    # Obtener atributos actuales
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT name, unit, upper_limit, lower_limit, value_expected, time FROM attribute")
+            
+            results = cursor.fetchall()
+            # print([result for result in results])
+            return [result for result in results]
+            # return [result[0].upper() for result in results]
+    except Exception as e:
+        print("[ERROR] No se encontraron atributos.")
+        return []
+    
+################################################################# URLs ###########################################################################
+
+def get_urls():
+    """Obtener todas las URLs de la tabla url_data - Estructura actualizada"""    
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                SELECT
+                    name,
+                    url_data
+                FROM url_data 
+                WHERE tc_id = 1
+                ORDER BY url_data_id ASC
+            ''')
+            urls = cursor.fetchall()
+            
+            # Convertir a diccionario para fácil acceso
+            url_dict = {}
+            for name, url in urls:
+                url_dict[name] = url
+            # print(url_dict['SHOP ORDER'])
+            return url_dict
+            
+    except Exception as e:
+        print(f"Error obteniendo URLs: {e}")
+        return {}
+
+################################################################# Type Test ###########################################################################
+
+def type_test():
+    # Obtener atributos actuales
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT test_type_id, name FROM test_type WHERE status_id = 1")
+            
+            results = cursor.fetchall()
+            # print([result for result in results])
+            # return [result for result in results]
+            # return [result[0].upper() for result in results]
+            return results
+    except Exception as e:
+        print("[ERROR] No se encontraron atributos.")
+        return []
+
+################################################################# Heatstake ###########################################################################
+
+def heatstake_info(serial_number):
+    # Obtener atributos actuales
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 2 AND part_number = %s ORDER BY part_id DESC LIMIT 1",(serial_number,))
+            part = cursor.fetchone()
+        
+        if not part:
+            return "FAILED"
+        
+        part_id = part[0]
+
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT part_id, cicle_time, serial_number, program_name, times_tamp, grade, description FROM heatstake WHERE part_id = %s",(part_id,))
+            
+            results = cursor.fetchall()
+            # print([result for result in results])
+            # return [result for result in results]
+            # return [result[0].upper() for result in results]
+            return results
+    except Exception as e:
+        print("[ERROR] No se encontraron atributos.")
+        return []
+
+################################################################# Obtener Parte ###########################################################################
+
+def obtener_parte(serial_number):
+     # Obtener part_id
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT part_id, part_number, model_id, create_registration FROM part WHERE part_number = %s ORDER BY part_id DESC LIMIT 1",(serial_number,))
+            part = cursor.fetchone()
+        
+        if not part:
+            return "FAILED"
+        
+        
+        return part
+    except Exception as e:
+        print("[ERROR] No se encontraron atributos.")
+        return []
+    
+################################################################# Obtener graph ###########################################################################
+
+def obtener_image(serial_number):
+    # Obtener part_id
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 2 AND part_number = %s ORDER BY part_id DESC LIMIT 1",(serial_number,))
+            part = cursor.fetchone()
+        
+        if not part:
+            return "FAILED"
+        
+        part_id = part[0]
+
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT part_id, data_image, description FROM graph_image WHERE part_id = %s",(part_id,))
+            
+            results = cursor.fetchall()
+            return results
+    except Exception as e:
+        print("[ERROR] No se encontraron atributos.")
+        return []
 #################################################################################################################
+
+################################################################# Obtener contadores de seriales ###########################################################################
+def seriales_procesados():
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT COUNT(DISTINCT part_id) FROM part WHERE status_id = 2")
+            count = cursor.fetchone()[0]
+            return count
+    except Exception as e:
+        print("[ERROR] No se encontraron atributos.")
+        return 0
+    
+def seriales_pendientes():
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT COUNT(DISTINCT part_id) FROM part WHERE status_id = 3")
+            count = cursor.fetchone()[0]
+            return count
+    except Exception as e:
+        print("[ERROR] No se encontraron atributos.")
+        return 0
+
+def unidades_falladas():
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT COUNT(DISTINCT part_id) FROM duration WHERE taskresult = 'FAILED'")
+            count = cursor.fetchone()[0]
+            return count
+    except Exception as e:
+        print("[ERROR] No se encontraron atributos.")
+        return 0
+    
+def multiplo_series():
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT CASE WHEN COUNT(DISTINCT part_id) % 100 = 0 AND COUNT(DISTINCT part_id) > 0 THEN 'multiplo' ELSE 'no_multiplo' END AS tipo_conteo FROM part;")
+            count = cursor.fetchone()[0]
+            return count
+    except Exception as e:
+        print("[ERROR] No se encontraron atributos.")
+        return 0
+############################################################################################################################################################
 # name = "P1895152-00-G:SHG2242791000290"
 # parameters_pressfit(['F', '50', '10', '100', 'Numeric', 'N', 'PASSED', 'Comentarios', 'dwell_time'],name)
 # parameters_electrical(['Ct', '50', '10', '100', 'Numeric', 'N', 'OK', 'Comentarios'],name)
@@ -2194,3 +2513,5 @@ def get_part_numbers(numero):
 # temperature_data(18)
 # parameters_welding(parametros)
 # welding_data(1)
+# atributos()
+# get_urls()
