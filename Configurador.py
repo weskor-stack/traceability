@@ -42,11 +42,13 @@ class ConfiguradorUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Configuración de URLs APIs")
-        self.root.geometry("600x480") 
+        self.root.geometry("600x550") # <- Aumentamos un poquito la altura
         self.root.configure(bg=BG_MAIN)
         apply_theme()
         self._build_ui()
-        self.station["values"] = ["Station 10", "Station 20", "Station 30"]
+        
+        # ACTUALIZAMOS LOS NOMBRES DEL COMBOBOX
+        self.station["values"] = ["ST10_LASER", "ST20_PRESSFIT", "ST30_HEATSTACKING"]
         
         # Cargar los datos desde la BD inmediatamente al abrir
         self.cargar()
@@ -95,20 +97,20 @@ class ConfiguradorUI:
         self.lbl_products = tk.Label(inner, text="PRODUCTS", bg=BG_MAIN, fg=FG_BLUE_LABEL, font=FONT_LABEL)
         self.products = tk.Entry(inner, **entry_kwargs)
 
-        # MACHINE / OPERATOR
-        tk.Label(inner, text="MACHINE NAME", bg=BG_MAIN, fg=FG_BLUE_LABEL, font=FONT_LABEL).grid(row=4, column=0, sticky="w")
-        tk.Label(inner, text="ID OPERATOR", bg=BG_MAIN, fg=FG_BLUE_LABEL, font=FONT_LABEL).grid(row=4, column=1, sticky="w", padx=(15,0))
+        # MACHINE / OPERATOR (Recorridos a las filas 6 y 7 para dar espacio)
+        tk.Label(inner, text="MACHINE NAME", bg=BG_MAIN, fg=FG_BLUE_LABEL, font=FONT_LABEL).grid(row=6, column=0, sticky="w")
+        tk.Label(inner, text="ID OPERATOR", bg=BG_MAIN, fg=FG_BLUE_LABEL, font=FONT_LABEL).grid(row=6, column=1, sticky="w", padx=(15,0))
         
         self.machine = tk.Entry(inner, **entry_kwargs)
-        self.machine.grid(row=5, column=0, sticky="ew", ipady=5, pady=(2, 15))
+        self.machine.grid(row=7, column=0, sticky="ew", ipady=5, pady=(2, 15))
         
         self.operator = tk.Entry(inner, **entry_kwargs)
-        self.operator.grid(row=5, column=1, sticky="ew", padx=(15, 0), ipady=5, pady=(2, 15))
+        self.operator.grid(row=7, column=1, sticky="ew", padx=(15, 0), ipady=5, pady=(2, 15))
 
-        # PROCESS NAME
-        tk.Label(inner, text="PROCESS NAME", bg=BG_MAIN, fg=FG_BLUE_LABEL, font=FONT_LABEL).grid(row=6, column=0, sticky="w")
+        # PROCESS NAME (Recorrido a las filas 8 y 9)
+        tk.Label(inner, text="PROCESS NAME", bg=BG_MAIN, fg=FG_BLUE_LABEL, font=FONT_LABEL).grid(row=8, column=0, sticky="w")
         self.process = tk.Entry(inner, **entry_kwargs)
-        self.process.grid(row=7, column=0, columnspan=2, sticky="ew", ipady=5, pady=(2, 15))
+        self.process.grid(row=9, column=0, columnspan=2, sticky="ew", ipady=5, pady=(2, 15))
 
         inner.columnconfigure(0, weight=1)
         inner.columnconfigure(1, weight=1)
@@ -118,7 +120,6 @@ class ConfiguradorUI:
         status_bar.pack(side="bottom", anchor="w", padx=24, pady=5)
 
     def _on_station_change(self, event):
-        # Usamos .strip() para asegurar limpieza, pero mantenemos tu texto de UI
         seleccion = self.station.get().strip()
         self.subtitle_var.set(f"Estación activa: {seleccion} — Todos los campos son obligatorios.")
 
@@ -127,15 +128,20 @@ class ConfiguradorUI:
         self.lbl_products.grid_forget()
         self.products.grid_forget()
 
-        if seleccion == "Station 10":
+        # AQUÍ ES DONDE ACOMODAMOS QUE MUESTRE AMBOS EN ST10
+        if seleccion == "ST10_LASER":
             self.lbl_shop.grid(row=2, column=0, sticky="w")
             self.shop_order.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(2, 15), ipady=5)
-        elif seleccion in ["Station 20", "Station 30"]:
+            
+            self.lbl_products.grid(row=4, column=0, sticky="w")
+            self.products.grid(row=5, column=0, columnspan=2, sticky="ew", pady=(2, 15), ipady=5)
+            
+        elif seleccion in ["ST20_PRESSFIT", "ST30_HEATSTACKING"]:
             self.lbl_products.grid(row=2, column=0, sticky="w")
             self.products.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(2, 15), ipady=5)
 
     def cargar(self):
-        """Carga TODOS los datos de la base de datos de forma segura, limpiando espacios fantasma."""
+        """Carga TODOS los datos de la base de datos de forma segura."""
         try:
             datos = conexion.obtener_datos_fila_unica()
             if datos:
@@ -146,32 +152,27 @@ class ConfiguradorUI:
                     if val not in ["(NULL)", "None", ""]:
                         self.machine.insert(0, val)
                 
-                # 2. Process
                 if longitud > 1 and datos[1]:
                     val = str(datos[1]).strip()
                     if val not in ["(NULL)", "None", ""]:
                         self.process.insert(0, val)
                 
-                # 3. Operator
                 if longitud > 2 and datos[2]:
                     val = str(datos[2]).strip()
                     if val not in ["(NULL)", "None", ""]:
                         self.operator.insert(0, val)
                 
-                # 4. Station
                 if longitud > 3 and datos[3]:
                     val = str(datos[3]).strip()
                     if val not in ["(NULL)", "None", ""]:
                         self.station.set(val)
-                        self._on_station_change(None) # Ejecuta el cambio visual para mostrar Shop Order o Products
+                        self._on_station_change(None) 
                 
-                # 5. Products
                 if longitud > 4 and datos[4]:
                     val = str(datos[4]).strip()
                     if val not in ["(NULL)", "None", ""]:
                         self.products.insert(0, val)
                 
-                # 6. Shop Order
                 if longitud > 5 and datos[5]:
                     val = str(datos[5]).strip()
                     if val not in ["(NULL)", "None", ""]:
@@ -184,7 +185,7 @@ class ConfiguradorUI:
         m = self.machine.get().strip()
         p = self.process.get().strip()
         o = self.operator.get().strip()
-        s = self.station.get().strip() # Limpiamos antes de validar/guardar
+        s = self.station.get().strip() 
         shop = self.shop_order.get().strip()
         prod = self.products.get().strip()
 
@@ -192,11 +193,14 @@ class ConfiguradorUI:
             messagebox.showwarning("Error", "Faltan campos obligatorios.")
             return
 
-        if s == "Station 10":
+        # VALIDACIÓN ACTUALIZADA CON LOS NUEVOS NOMBRES
+        if s == "ST10_LASER":
             if not shop:
-                messagebox.showwarning("Error", "Shop Order es requerido para Estación 10.")
+                messagebox.showwarning("Error", "Shop Order es requerido para ST10_LASER.")
                 return
-            prod = "" 
+            if not prod:
+                messagebox.showwarning("Error", "Product es requerido para ST10_LASER.")
+                return
             
             try:
                 url_base = conexion.obtener_url_api()
@@ -204,12 +208,17 @@ class ConfiguradorUI:
                     messagebox.showerror("Error", "No se encontró la URL en la base de datos (tabla url_data).")
                     return
                 
-                shopo_order_api.consultar_api_y_guardar(api_url=url_base, shop_order=shop)
+                exito, nombre, cantidad = shopo_order_api.consultar_api_y_guardar(api_url=url_base, shop_order=shop)
+                
+                if not exito or nombre is None or cantidad == 0:
+                    messagebox.showerror("Error API", "La API no devolvió contenido para este Shop Order (resultado nulo o vacío).")
+                    return # Detenemos el proceso de guardado
+                    
             except Exception as e:
                 messagebox.showerror("Error API", f"Error al ejecutar la API: {str(e)}")
                 return
                 
-        elif s in ["Station 20", "Station 30"]:
+        elif s in ["ST20_PRESSFIT", "ST30_HEATSTACKING"]:
             if not prod:
                 messagebox.showwarning("Error", "Product es requerido para esta estación.")
                 return

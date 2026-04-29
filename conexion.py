@@ -200,23 +200,23 @@ def select_attributes():
     cursor.close()
     return data
 
-def insert_attribute(name, unit, upper_limit, lower_limit, value_expected, create_registration):
+def insert_attribute(name, unit, upper_limit, lower_limit, value_expected, time, create_registration):
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO attribute (name, unit, upper_limit, lower_limit, value_expected,  create_registration) VALUES (%s, %s, %s, %s, %s, %s)",
-        (name, unit, upper_limit, lower_limit, value_expected, create_registration)
+        "INSERT INTO attribute (name, unit, upper_limit, lower_limit, value_expected, time, create_registration) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+        (name, unit, upper_limit, lower_limit, value_expected, time, create_registration)
     )
     conn.commit()
     attribute_id = cursor.lastrowid
     cursor.close()
     return attribute_id
 
-def update_attribute(attribute_id, name, unit, upper_limit, lower_limit, value_expected):
+def update_attribute(attribute_id, name, unit, upper_limit, lower_limit, time, value_expected):
     cursor = conn.cursor()
 
     cursor.execute(
-        "UPDATE attribute SET name=%s, unit=%s, upper_limit=%s, lower_limit=%s, value_expected=%s WHERE attribute_id=%s",
-        (name, unit, upper_limit, lower_limit, value_expected, attribute_id)
+        "UPDATE attribute SET name=%s, unit=%s, upper_limit=%s, lower_limit=%s,time=%s, value_expected=%s WHERE attribute_id=%s",
+        (name, unit, upper_limit, lower_limit, time, value_expected, attribute_id)
     )
 
     conn.commit()

@@ -65,7 +65,7 @@ class FormularioPrincipal:
 
         self.tabla = ttk.Treeview(
             tabla_frame,
-            columns=("Nombre", "Lower", "Upper", "Value"),
+            columns=("Nombre", "Lower", "Upper", "Value", "Time"), # Agregada columna Time
             show="headings",
             selectmode="browse"
         )
@@ -74,11 +74,13 @@ class FormularioPrincipal:
         self.tabla.heading("Lower", text="Lower-limit")
         self.tabla.heading("Upper", text="Upper-limit")
         self.tabla.heading("Value", text="Value_expected")
+        self.tabla.heading("Time", text="Time") # Header para Time
         
         self.tabla.column("Nombre", width=180)
         self.tabla.column("Lower", width=120, anchor="center")
         self.tabla.column("Upper", width=120, anchor="center")
-        self.tabla.column("Value", width=150, anchor="center")
+        self.tabla.column("Value", width=120, anchor="center")
+        self.tabla.column("Time", width=100, anchor="center") # Ancho para Time
         
         self.tabla.pack(fill="both", expand=True)
 
@@ -101,6 +103,7 @@ class FormularioPrincipal:
                     registro[4],  
                     registro[3],  
                     registro[5], 
+                    registro[6], # Índice correspondiente a Time
                 ), tags=(tag,))
 
                 self.data[item] = {
@@ -110,7 +113,8 @@ class FormularioPrincipal:
                     "upper_limit":         registro[3],
                     "lower_limit":         registro[4],
                     "value_expected":      registro[5],
-                    "create_registration": registro[7],
+                    "time":                registro[6], # Guardamos Time en la data
+                    "create_registration": registro[8], # Asumiendo que user_id es [7] y fecha es [8]
                 }
         except Exception as e:
             print(f"Error al cargar datos: {e}")
@@ -130,27 +134,27 @@ class FormularioPrincipal:
 
     def agregar_datos(self, datos):
         try:
+            # Asegúrate de que tu función en conexion.py reciba este nuevo parámetro 'time'
             attribute_id = conexion.insert_attribute(
                 datos["name"],
                 datos["unit"],
                 datos["upper_limit"],
                 datos["lower_limit"],
                 datos["value_expected"],
+                datos["time"], 
                 datos["create_registration"]
             )
-
             datos["attribute_id"] = attribute_id
 
             count = len(self.tabla.get_children())
             tag = "par" if count % 2 == 0 else "impar"
-
             item = self.tabla.insert("", "end", values=(
                 datos["name"],
                 datos["lower_limit"],
                 datos["upper_limit"],
                 datos["value_expected"],
+                datos["time"],
             ), tags=(tag,))
-
             self.data[item] = datos
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo agregar: {e}")
@@ -159,6 +163,7 @@ class FormularioPrincipal:
         try:
             attribute_id = self.data[item]["attribute_id"]
 
+            # Asegúrate de que tu función en conexion.py reciba este nuevo parámetro 'time'
             conexion.update_attribute(
                 attribute_id,
                 datos["name"],
@@ -166,6 +171,7 @@ class FormularioPrincipal:
                 datos["upper_limit"],
                 datos["lower_limit"],
                 datos["value_expected"],
+                datos["time"],
             )
 
             self.tabla.item(item, values=(
@@ -173,6 +179,7 @@ class FormularioPrincipal:
                 datos["lower_limit"],
                 datos["upper_limit"],
                 datos["value_expected"],
+                datos["time"],
             ))
 
             datos["attribute_id"] = attribute_id
@@ -213,7 +220,7 @@ class VentanaFormulario:
         
         self.ventana = tk.Toplevel(principal.root)
         self.ventana.title(f"{modo} Registro")
-        self.ventana.geometry("380x480") # <- AUMENTÉ EL ALTO PARA QUE QUEPA TODO BIEN
+        self.ventana.geometry("380x550") # AUMENTÉ EL ALTO PARA EL CAMPO TIME
         self.ventana.configure(bg=BG_MAIN)
         try: self.ventana.iconbitmap("favicon.ico")
         except: pass
@@ -233,13 +240,15 @@ class VentanaFormulario:
         self.lower = tk.StringVar()
         self.upper = tk.StringVar()
         self.value = tk.StringVar()
+        self.time = tk.StringVar() # Nueva variable Time
 
         if datos:
-            self.nombre.set(datos["name"])
-            self.unit.set(datos["unit"])
-            self.lower.set(datos["lower_limit"])
-            self.upper.set(datos["upper_limit"])
-            self.value.set(datos["value_expected"])
+            self.nombre.set(datos.get("name", ""))
+            self.unit.set(datos.get("unit", ""))
+            self.lower.set(datos.get("lower_limit", ""))
+            self.upper.set(datos.get("upper_limit", ""))
+            self.value.set(datos.get("value_expected", ""))
+            self.time.set(datos.get("time", ""))
 
         # Configuración común para Entradas (Borde plano, Consolas)
         entry_kwargs = {"bg": BG_MAIN, "fg": "black", "relief": "flat", "font": FONT_MONO, 
@@ -251,8 +260,9 @@ class VentanaFormulario:
         self.crear_campo(form_frame, "Lower-limit", self.lower)
         self.crear_campo(form_frame, "Upper-limit", self.upper)
         self.crear_campo(form_frame, "Value_expected", self.value)
+        self.crear_campo(form_frame, "Time", self.time) # Nuevo campo visual
 
-        # Botón Guardar (Corregido para que se coloque al fondo de manera natural)
+        # Botón Guardar 
         btn_frame = tk.Frame(self.ventana, bg=BG_BUTTON_BAR)
         btn_frame.pack(fill="x")
         tk.Button(btn_frame, text="💾 Guardar", font=FONT_BTN, bg=BTN_GREEN, fg="white", relief="flat", cursor="hand2", padx=20, pady=6, command=self.guardar).pack(pady=10)
@@ -263,8 +273,8 @@ class VentanaFormulario:
         entry.pack(fill="x", ipady=4, pady=(2, 10))
 
     def guardar(self):
-        # Validar campos vacíos
-        if not all([self.nombre.get(), self.lower.get(), self.upper.get(), self.value.get()]):
+        # Validar campos vacíos (incluyendo time)
+        if not all([self.nombre.get(), self.lower.get(), self.upper.get(), self.value.get(), self.time.get()]):
             messagebox.showwarning("Incompleto", "Por favor, llene los campos principales.")
             return
 
@@ -274,6 +284,7 @@ class VentanaFormulario:
             "upper_limit":         self.upper.get(),
             "lower_limit":         self.lower.get(),
             "value_expected":      self.value.get(),
+            "time":                self.time.get(), # Se envía Time a datos
             "create_registration": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
@@ -283,7 +294,6 @@ class VentanaFormulario:
             self.principal.actualizar_datos(self.item, datos)
 
         self.ventana.destroy()
-
 
 # ===== MAIN =====
 if __name__ == "__main__":

@@ -23,16 +23,11 @@ import sys
 import time
 import platform
 import logging
-<<<<<<< HEAD
-import traceback
-import Configurador
-=======
 import leer_shop_order
 import procesar_registros
 import interlocking_api
 import traceability_api
 import shopo_order_api
->>>>>>> 320bf6b4dc71d8e1a424c0993c51ddf723e884ff
 
 def configurar_logging():
     """Configura el sistema de logging"""
