@@ -36,17 +36,73 @@ def obtener_datos_fila_unica():
         print(f"Error: {e}")
         return None
     
-def insert_simple(machine, process, operator, station):
-    cursor = conn.cursor()
+# def insert_simple(machine, process, operator, station):
 
-    sql = """
-        INSERT INTO configurador
-        (machine_id, process_name, operator, station, create_registration)
-        VALUES (?, ?, ?, ?, ?)
+#URLs
+def get_station():
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT station 
+            FROM configurador 
+            ORDER BY configurador_id DESC 
+            LIMIT 1
+        """)
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return row[0] if row else None
+    except mariadb.Error as e:
+        print(f"Error en get_station: {e}")
+        return None
+    
+def get_connection():
+    return mariadb.connect(
+        user="root",
+        password="u8ch9Xn4Ol8woLw3E2A6",
+        host="127.0.0.1",
+        port=3306,
+        database="data_tracking_qwert"
+    )
+
+def select_api_configs():
     """
-    cursor.execute(sql, (machine, process, operator, station, datetime.now()))
+    Lee de url_data. 
+    Columnas: [0]url_data_id [1]tc_id [2]name [3]url_data [4]user_id [5]create_registration
+    """
+    conn   = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT url_data_id, tc_id, name, url_data FROM url_data ORDER BY url_data_id ASC")
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    print(f"Registros DB: {rows}")  # debug — quítalo cuando funcione
+    return rows
+
+def update_api_by_name(nombre, url):
+    """Actualiza la URL de un registro por su nombre."""
+    conn   = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE url_data SET url_data = ? WHERE name = ?",
+        (url, nombre)
+    )
     conn.commit()
     cursor.close()
+    conn.close()
+    
+# def insert_attribute(name, unit, upper, lower, value, create_registration):
+#     cursor = conn.cursor()
+
+#     sql = """
+#         INSERT INTO configurador
+#         (machine_id, process_name, operator, station, create_registration)
+#         VALUES (?, ?, ?, ?, ?)
+#     """
+#     cursor.execute(sql, (machine, process, operator, station, datetime.now()))
+#     conn.commit()
+#     cursor.close()
 
 def select_distinct(column):
     cursor = conn.cursor()
@@ -122,11 +178,10 @@ def insert_attribute(name, unit, upper, lower, value, create_registration):
 
     cursor.execute(sql, (name, unit, upper, lower, value, create_registration))
     conn.commit()
-
     attribute_id = cursor.lastrowid
     cursor.close()
-
     return attribute_id
+
 def select_attributes():
     cursor = conn.cursor()
     cursor.execute("""
