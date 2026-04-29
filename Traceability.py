@@ -23,8 +23,16 @@ import sys
 import time
 import platform
 import logging
+<<<<<<< HEAD
 import traceback
 import Configurador
+=======
+import leer_shop_order
+import procesar_registros
+import interlocking_api
+import traceability_api
+import shopo_order_api
+>>>>>>> 320bf6b4dc71d8e1a424c0993c51ddf723e884ff
 
 def configurar_logging():
     """Configura el sistema de logging"""
@@ -320,6 +328,34 @@ label_user.place(x=1050, y=300)
 label_users = ctk.CTkLabel(master=frame, text="Admin")
 label_users.place(x=1050, y=320)
 
+label_total_seriales = ctk.CTkLabel(master=frame, text="Total serials:")
+
+
+label_total_seriales_count = ctk.CTkLabel(master=frame, text="0")
+
+label_total_seriales_restantes = ctk.CTkLabel(master=frame, text="Remaining serials:")
+
+label_total_seriales_restantes_count = ctk.CTkLabel(master=frame, text="0")
+
+
+label_seriales_procesados = ctk.CTkLabel(master=frame, text="Processed pieces:")
+label_seriales_procesados.place(x=1050, y=340)
+
+label_seriales_procesados_count = ctk.CTkLabel(master=frame, text="0")
+label_seriales_procesados_count.place(x=1200, y=340)
+
+label_seriales_pendientes = ctk.CTkLabel(master=frame, text="Pending pieces:")
+label_seriales_pendientes.place(x=1050, y=370)
+
+label_seriales_pendientes_count = ctk.CTkLabel(master=frame, text="0")
+label_seriales_pendientes_count.place(x=1200, y=370)
+
+label_seriales_fail = ctk.CTkLabel(master=frame, text="Failed pieces:")
+label_seriales_fail.place(x=1050, y=400)
+
+label_seriales_fail_count = ctk.CTkLabel(master=frame, text="0")
+label_seriales_fail_count.place(x=1200, y=400)
+
 headers = [["Measurement","Value","Lower limit","Upper limit","Type","Unit","Result"]]
 button_config.place(x=1050, y=200)
 # table = CTkTable(master=frame, row=8, column=7, header_color="#1f618d", values= headers)
@@ -500,6 +536,25 @@ def worker(conn, addr):
         logging.info("PLC - Connected")
         conn.send("Ready".encode('UTF-8'))
 
+        configurador = conexion.configurador()
+        if "ST10" in configurador[3]:
+            label_total_seriales.place(x=1050, y=280)
+            label_total_seriales_restantes.place(x=1050, y=310)
+            label_total_seriales_restantes_count.place(x=1200, y=310)
+            label_total_seriales_count.place(x=1200, y=280)
+            registros = procesar_registros.verificar_archivos()
+            label_total_seriales_count.configure(text=str(registros))
+            label_total_seriales_restantes_count.configure(text=str(registros))
+        
+        contador_pendientes = conexion.seriales_pendientes()
+        label_seriales_pendientes_count.configure(text=str(contador_pendientes))
+
+        contador_procesados = conexion.seriales_procesados()
+        label_seriales_procesados_count.configure(text=str(contador_procesados))
+
+        contador_fail = conexion.unidades_falladas()
+        label_seriales_fail_count.configure(text=str(contador_fail))
+
         green_label.configure(image=image_green_full)
         red_label.configure(image=image_red)
 
@@ -545,6 +600,15 @@ def worker(conn, addr):
 
                         clear_table_data()
                         
+                        configurador = conexion.configurador()
+                        estacion = ""
+                        if "ST10" in configurador[3]:
+                            estacion = "ST10"
+                        elif "ST20" in configurador[3]:
+                            estacion = "ST20"
+                        elif "ST30" in configurador[3]:
+                            estacion = "ST30"
+
                         if len(option) == 2 and option[-1] == '1/':
                             entry_piece.configure(state=ctk.NORMAL, textvariable=piece_name)
                             piece_name.set("")
@@ -587,34 +651,92 @@ def worker(conn, addr):
                                         entry_piece.configure(state="readonly", textvariable=piece_name)
                                         piece_name.set(name_piece)
 
-                                        conn.send(piece.encode('UTF-8'))
-                                        safe_insert("[ROUTE CHECK] Confirmation sent to PLC\n", "green")
-                                        logging.info("[ROUTE CHECK] Confirmation sent to PLC")
+                                        # ============ LLAMAR A API INTERLOCKING SEGÚN LA ESTACIÓN ============
+                                        safe_insert(f"🔄 Validating with INTERLOCKING API for part: {name_piece}...\n", "blue")
+                                        logging.info(f"Validating with INTERLOCKING API for part: {name_piece} (Station: {estacion})")
+                                        
+                                        # Determinar qué función usar según la estación
+                                        if "ST10" == estacion:
+                                            # Estación 10 - Usar estructura específica de Laser
+                                            safe_insert(f"📍 Station {estacion} detected - Using ST10 structure\n", "blue")
+                                            interlocking_success, interlocking_message, attempts, response_time_ms  = interlocking_api.validate_station_10()
+                                        else:
+                                            # Otras estaciones - Usar estructura genérica
+                                            safe_insert(f"📍 Station {estacion} detected - Using generic structure\n", "blue")
+                                            interlocking_success, interlocking_message, attempts, response_time_ms  = interlocking_api.validate_piece(name_piece)
 
-                                        # Almacenar la pieza en la base de datos
-                                        conexion.piece_store(name_piece)
-                                                    
-                                        # Registrar en bitácora
-                                        conexionBitacora.event(
-                                        "SPP-001",
-                                        f"|Command received| {cadena} part: {name_piece} - Route check passed",
-                                        month,
-                                        day
-                                        )
-                                        conexionBitacora.event(
-                                        "CHKROUTE-001",
-                                        f"Route check passed for ISN: {name_piece}",
-                                        month,
-                                        day
-                                        )
-                                        conexionBitacora.event("CMD-P001", "|Command,PASSED|", month, day)
+                                        if interlocking_success:
+                                            safe_insert(f"✅ INTERLOCKING validation PASSED (después de {attempts} intento(s)): {interlocking_message}\n", "green")
+                                            logging.info(f"INTERLOCKING validation PASSED for {name_piece} (intentos: {attempts}, tiempo: {response_time_ms} ms, estación: {estacion})")
+                                            
+                                            # Registrar en bitácora
+                                            conexionBitacora.event("ILK-001", f"INTERLOCKING validation PASSED for ISN: {name_piece} (intentos: {attempts}, tiempo: {response_time_ms} ms, estación: {estacion})", month, day)
+                                            
+                                            # Enviar confirmación al PLC
+                                            conn.send(piece.encode('UTF-8'))
+                                            # safe_insert("[ROUTE CHECK] Confirmation sent to PLC\n", "green")
+                                            # logging.info("[ROUTE CHECK] Confirmation sent to PLC")
 
-                                        safe_insert(f"Command received-> {cadena} part: {name_piece}\nCommand PASSED\n", "green")
-                                        logging.info(f"Command received-> {cadena} part: {name_piece} - Command PASSED")
+                                            # Almacenar la pieza en la base de datos SOLO SI PASÓ LA VALIDACIÓN
+                                            conexion.piece_store(name_piece)
+                                            
+                                            contador_pendientes = conexion.seriales_pendientes()
+                                            label_seriales_pendientes_count.configure(text=str(contador_pendientes))
 
-                                        green_label.configure(image=image_green_full)
-                                        red_label.configure(image=image_red)
-                                        pieza = name_piece
+                                            # Registrar en bitácora
+                                            conexionBitacora.event(
+                                                "SPP-001",
+                                                f"|Command received| {cadena} part: {name_piece} - Route check passed - INTERLOCKING: OK (intentos: {attempts}, tiempo: {response_time_ms} ms)",
+                                                month, day
+                                            )
+                                            conexionBitacora.event(
+                                                "CHKROUTE-001",
+                                                f"Route check passed for ISN: {name_piece} - INTERLOCKING validated (intentos: {attempts}, tiempo: {response_time_ms} ms)",
+                                                month, day
+                                            )
+                                            conexionBitacora.event("CMD-P001", "|Command,PASSED|", month, day)
+
+                                            safe_insert(f"Command received-> {cadena} part: {name_piece}\nCommand PASSED\n", "green")
+                                            logging.info(f"Command received-> {cadena} part: {name_piece} - Command PASSED")
+
+                                            green_label.configure(image=image_green_full)
+                                            red_label.configure(image=image_red)
+                                            pieza = name_piece
+                                            
+                                        else:
+                                            # INTERLOCKING falló - NO almacenar la pieza
+                                            safe_insert(f"❌ INTERLOCKING validation FAILED después de {attempts} intentos (último tiempo: {response_time_ms} ms): {interlocking_message}\n", "red")
+                                            logging.error(f"INTERLOCKING validation FAILED for {name_piece} después de {attempts} intentos (tiempo: {response_time_ms} ms, estación: {estacion}): {interlocking_message}")
+                                            
+                                            # Registrar fallo en bitácora con tiempo
+                                            conexionBitacora.event("ILK-002", f"INTERLOCKING validation FAILED for ISN: {name_piece} después de {attempts} intentos (tiempo: {response_time_ms} ms, estación: {estacion})", month, day)
+                                            # Enviar FAILED al PLC
+                                            try:
+                                                conn.send("FAILED".encode('UTF-8'))
+                                                # conn.send("INTERLOCKING validation failed".encode('UTF-8'))
+                                            except Exception as e:
+                                                safe_insert(f"Error enviando: {e}", "red")
+                                                logging.error(f"Error enviando: {e}")
+                                            
+                                            # Registrar en bitácora el fallo
+                                            conexionBitacora.event(
+                                                "SPP-002",
+                                                f"|Command received| {cadena} part: {name_piece} - INTERLOCKING validation FAILED después de {attempts} intentos (tiempo: {response_time_ms} ms)",
+                                                month, day
+                                            )
+                                            conexionBitacora.event("CMD-F001", "|Command,FAILED|", month, day)
+                                            
+                                            safe_insert(f"Command received-> {cadena} part: {name_piece}\nCommand FAILED - INTERLOCKING validation failed\n", "red")
+                                            logging.warning(f"Command received-> {cadena} part: {name_piece} - Command FAILED")
+                                            
+                                            green_label.configure(image=image_green)
+                                            red_label.configure(image=image_red_full)
+                                            
+                                            # NO almacenar la pieza, salir del bucle
+                                            entry_piece.configure(state="readonly", textvariable=piece_name)
+                                            piece_name.set("")
+                                            break
+                                        # ============ FIN LLAMADA API ============
 
                                         break
 
@@ -677,32 +799,92 @@ def worker(conn, addr):
                                 entry_piece.configure(state="readonly", textvariable=piece_name)
                                 piece_name.set(name_piece)
 
-                                conn.send(piece.encode('UTF-8'))
-                                
-                                # Almacenar la pieza en la base de datos
-                                conexion.piece_store(name_piece)
-                                                    
-                                # Registrar en bitácora
-                                conexionBitacora.event(
-                                "SPP-001",
-                                f"|Command received| {cadena} part: {name_piece} - Route check passed",
-                                month,
-                                day
-                                )
-                                conexionBitacora.event(
-                                "CHKROUTE-001",
-                                f"Route check passed for ISN: {name_piece}",
-                                month,
-                                day
-                                )
-                                conexionBitacora.event("CMD-P001", "|Command,PASSED|", month, day)
+                                # ============ LLAMAR A API INTERLOCKING SEGÚN LA ESTACIÓN ============
+                                safe_insert(f"🔄 Validating with INTERLOCKING API for part: {name_piece}...\n", "blue")
+                                logging.info(f"Validating with INTERLOCKING API for part: {name_piece} (Station: {estacion})")
+                                        
+                                # Determinar qué función usar según la estación
+                                if "ST10" == estacion:
+                                    # Estación 10 - Usar estructura específica de Laser
+                                    safe_insert(f"📍 Station {estacion} detected - Using ST10 structure\n", "blue")
+                                    interlocking_success, interlocking_message, attempts, response_time_ms  = interlocking_api.validate_station_10()
+                                else:
+                                    # Otras estaciones - Usar estructura genérica
+                                    safe_insert(f"📍 Station {estacion} detected - Using generic structure\n", "blue")
+                                    interlocking_success, interlocking_message, attempts, response_time_ms  = interlocking_api.validate_piece(name_piece)
 
-                                safe_insert(f"Command received-> {cadena} part: {name_piece}\nCommand PASSED\n", "green")
-                                logging.info(f"Command received-> {cadena} part: {name_piece} - Command PASSED")
+                                if interlocking_success:
+                                    safe_insert(f"✅ INTERLOCKING validation PASSED (después de {attempts} intento(s)): {interlocking_message}\n", "green")
+                                    logging.info(f"INTERLOCKING validation PASSED for {name_piece} (intentos: {attempts}, tiempo: {response_time_ms} ms, estación: {estacion})")
+                                            
+                                    # Registrar en bitácora
+                                    conexionBitacora.event("ILK-001", f"INTERLOCKING validation PASSED for ISN: {name_piece} (intentos: {attempts}, tiempo: {response_time_ms} ms, estación: {estacion})", month, day)
+                                            
+                                    # Enviar confirmación al PLC
+                                    conn.send(piece.encode('UTF-8'))
+                                    # safe_insert("[ROUTE CHECK] Confirmation sent to PLC\n", "green")
+                                    # logging.info("[ROUTE CHECK] Confirmation sent to PLC")
 
-                                green_label.configure(image=image_green_full)
-                                red_label.configure(image=image_red)
-                                pieza = name_piece
+                                    # Almacenar la pieza en la base de datos SOLO SI PASÓ LA VALIDACIÓN
+                                    conexion.piece_store(name_piece)
+
+                                    contador_pendientes = conexion.seriales_pendientes()
+                                    label_seriales_pendientes_count.configure(text=str(contador_pendientes))
+                                            
+                                    # Registrar en bitácora
+                                    conexionBitacora.event(
+                                        "SPP-001",
+                                        f"|Command received| {cadena} part: {name_piece} - Route check passed - INTERLOCKING: OK (intentos: {attempts}, tiempo: {response_time_ms} ms)",
+                                        month, day
+                                    )
+                                    conexionBitacora.event(
+                                        "CHKROUTE-001",
+                                        f"Route check passed for ISN: {name_piece} - INTERLOCKING validated (intentos: {attempts}, tiempo: {response_time_ms} ms)",
+                                        month, day
+                                    )
+                                    conexionBitacora.event("CMD-P001", "|Command,PASSED|", month, day)
+
+                                    safe_insert(f"Command received-> {cadena} part: {name_piece}\nCommand PASSED\n", "green")
+                                    logging.info(f"Command received-> {cadena} part: {name_piece} - Command PASSED")
+
+                                    green_label.configure(image=image_green_full)
+                                    red_label.configure(image=image_red)
+                                    pieza = name_piece
+                                            
+                                else:
+                                    # INTERLOCKING falló - NO almacenar la pieza
+                                    safe_insert(f"❌ INTERLOCKING validation FAILED después de {attempts} intentos (último tiempo: {response_time_ms} ms): {interlocking_message}\n", "red")
+                                    logging.error(f"INTERLOCKING validation FAILED for {name_piece} después de {attempts} intentos (tiempo: {response_time_ms} ms, estación: {estacion}): {interlocking_message}")
+                                        
+                                    # Registrar fallo en bitácora con tiempo
+                                    conexionBitacora.event("ILK-002", f"INTERLOCKING validation FAILED for ISN: {name_piece} después de {attempts} intentos (tiempo: {response_time_ms} ms, estación: {estacion})", month, day)
+                                    # Enviar FAILED al PLC
+                                    try:
+                                        conn.send("FAILED".encode('UTF-8'))
+                                        # conn.send("INTERLOCKING validation failed".encode('UTF-8'))
+                                    except Exception as e:
+                                        safe_insert(f"Error enviando: {e}", "red")
+                                        logging.error(f"Error enviando: {e}")
+                                            
+                                    # Registrar en bitácora el fallo
+                                    conexionBitacora.event(
+                                        "SPP-002",
+                                        f"|Command received| {cadena} part: {name_piece} - INTERLOCKING validation FAILED después de {attempts} intentos (tiempo: {response_time_ms} ms)",
+                                        month, day
+                                    )
+                                    conexionBitacora.event("CMD-F001", "|Command,FAILED|", month, day)
+                                            
+                                    safe_insert(f"Command received-> {cadena} part: {name_piece}\nCommand FAILED - INTERLOCKING validation failed\n", "red")
+                                    logging.warning(f"Command received-> {cadena} part: {name_piece} - Command FAILED")
+                                        
+                                    green_label.configure(image=image_green)
+                                    red_label.configure(image=image_red_full)
+                                    
+                                    # NO almacenar la pieza, salir del bucle
+                                    entry_piece.configure(state="readonly", textvariable=piece_name)
+                                    piece_name.set("")
+                                    break
+                                # ============ FIN LLAMADA API ============
 
                             else:
                                 conn.settimeout(None)
@@ -817,119 +999,73 @@ def worker(conn, addr):
                             if duration == "PASSED":
                                 # entry_piece.configure(state="readonly", textvariable=piece_name)
                                 # piece_name.set("")
-                                safe_insert("Command received-> "+cadena+"\n"+"Command END PROCESS PASSED"+"\n")
+
+                                # ============ LLAMAR A API TRACEABILITY ============
+                                # Obtener la estación actual
+                                configurador = conexion.configurador()
+                                current_station = configurador[3] if configurador and len(configurador) > 3 else ""
+                                serial_number = option[4]  # El número de serie viene en option[4]
+                                
+                                safe_insert(f"🔄 Sending data to TRACEABILITY API for part: {serial_number} (Estación: {current_station})...\n", "blue")
+                                logging.info(f"Sending data to TRACEABILITY API for part: {serial_number} (Estación: {current_station})")
+                                
+                                # Determinar qué estructura usar según la estación
+                                if "ST10" in current_station:
+                                    station_type = "ST10"
+                                elif "ST20" in current_station:
+                                    station_type = "ST20"
+                                elif "ST30" in current_station:
+                                    station_type = "ST30"
+                                else:
+                                    # Por defecto usar ST20 para otras estaciones
+                                    station_type = "ST20"
+                                    safe_insert(f"📍 Station {current_station} not specifically configured, using default ST20 structure\n", "orange")
+                                
+                                traceability_success, traceability_message, attempts, response_time_ms = traceability_api.send_traceability_data(
+                                    serial_number=serial_number,
+                                    station_type=station_type
+                                )
+                                
+                                if traceability_success:
+                                    safe_insert(f"✅ TRACEABILITY data sent successfully (después de {attempts} intento(s), tiempo respuesta: {response_time_ms} ms)\n", "green")
+                                    logging.info(f"TRACEABILITY data sent successfully for {serial_number} (intentos: {attempts}, tiempo: {response_time_ms} ms)")
+                                    
+                                    # Registrar en bitácora
+                                    conexionBitacora.event("TRC-001", f"TRACEABILITY data sent for ISN: {serial_number} (estación: {current_station}, intentos: {attempts}, tiempo: {response_time_ms} ms)", month, day)
+
+                                    contador_pendientes = conexion.seriales_pendientes()
+                                    label_seriales_pendientes_count.configure(text=str(contador_pendientes))
+
+                                    contador_procesados = conexion.seriales_procesados()
+                                    label_seriales_procesados_count.configure(text=str(contador_procesados))
+
+                                    contador_fail = conexion.unidades_falladas()
+                                    label_seriales_fail_count.configure(text=str(contador_fail))
+                                    
+                                    configurador = conexion.configurador()
+                                    multiplo = conexion.multiplo_series()
+                                    if multiplo == 'multiplo':
+                                        for name, url in urls.items():
+                                            if 'TRACEABILITY' in name.upper():
+                                                logging.info(f"URL de TRACEABILITY encontrada: {name} -> {url}")
+                                                url_api = url
+                                        exito, nombre, cantidad = shopo_order_api.consultar_api_y_guardar(url_api, configurador[5])
+                                    
+                                else:
+                                    safe_insert(f"❌ TRACEABILITY data send FAILED después de {attempts} intentos (último tiempo: {response_time_ms} ms): {traceability_message}\n", "red")
+                                    logging.error(f"TRACEABILITY data send FAILED for {serial_number} después de {attempts} intentos: {traceability_message}")
+                                    
+                                    # Registrar fallo en bitácora
+                                    conexionBitacora.event("TRC-002", f"TRACEABILITY data send FAILED for ISN: {serial_number} (estación: {current_station}, intentos: {attempts}, tiempo: {response_time_ms} ms): {traceability_message}", month, day)
+                                    
+                                    # NOTA: Aunque falle TRACEABILITY, el proceso continúa porque ya se generaron los archivos
+                                    # solo se registra el error, no se detiene el flujo
+                                # ============ FIN LLAMADA API TRACEABILITY ============
+                                # safe_insert("Command received-> "+cadena+"\n"+"Command END PROCESS PASSED"+"\n")
                                 try:
                                     conn.send("PASSED".encode('UTF-8'))
                                 except Exception as e:
                                     safe_insert(f"Error enviando: {e}", "red")
-
-
-                                # Obtener formatos habilitados
-                                enabled_formats = conexion.get_enabled_export_formats()
-                                # safe_insert(f"Supported formats: {', '.join(enabled_formats) if enabled_formats else 'None'}\n")
-
-                                # Variables para resultados
-                                json_result = None
-                                csv_result = None
-                                xml_result = None
-                                any_file_created = False
-                                errors = []
-
-                                # Generar archivos según formatos habilitados
-                                if 'JSON' in enabled_formats:
-                                    print("Generating JSON file...")
-                                    try:
-                                        file_json = data_json.json_file(option[4])
-                                        json_result = file_json
-                                        if file_json == "PASSED":
-                                            any_file_created = True
-                                            # safe_insert("✓ JSON file successfully generated\n")
-                                        else:
-                                            errors.append(f"JSON: {file_json}")
-                                            safe_insert(f"✗ JSON Error: {file_json}\n", "red")
-                                    except Exception as e:
-                                        errors.append(f"JSON: {str(e)}")
-                                        print(errors)
-                                        safe_insert(f"✗ JSON Exception: {str(e)}\n", "red")
-                                    
-                                if 'CSV' in enabled_formats:
-                                    try:
-                                        # Importar aquí para evitar dependencia si no está habilitado
-                                        import data_csv_60
-                                        file_csv = data_csv_60.csv_file()
-                                        csv_result = file_csv
-                                        if file_csv == "PASSED":
-                                            any_file_created = True
-                                            # safe_insert("✓ CSV file successfully generated\n")
-                                        else:
-                                            errors.append(f"CSV: {file_csv}")
-                                            safe_insert(f"✗ CSV Error: {file_csv}\n", "red")
-                                    except ImportError:
-                                        errors.append("CSV: Módulo no encontrado")
-                                        safe_insert("✗ CSV module not available\n", "red")
-                                    except Exception as e:
-                                        errors.append(f"CSV: {str(e)}")
-                                        safe_insert(f"✗ CSV Exception: {str(e)}\n", "red")
-                                    
-                                if 'XML' in enabled_formats:
-                                    try:
-                                        # Importar aquí para evitar dependencia si no está habilitado
-                                        import data_xml
-                                        file_xml = data_xml.xml_file()
-                                        xml_result = file_xml
-                                        if file_xml == "PASSED":
-                                            any_file_created = True
-                                            # safe_insert("✓ XML file successfully generated\n")
-                                        else:
-                                            errors.append(f"XML: {file_xml}")
-                                            safe_insert(f"✗ XML Error: {file_xml}\n", "red")
-                                    except ImportError:
-                                        errors.append("XML: Módulo no encontrado")
-                                        safe_insert("✗ XML module not available\n", "red")
-                                    except Exception as e:
-                                        errors.append(f"XML: {str(e)}")
-                                        safe_insert(f"✗ XML Exception: {str(e)}\n", "red")
-                                    
-                                # Verificar resultados
-                                if not enabled_formats:
-                                    safe_insert("⚠ No export formats enabled\n", "orange")
-                                    conexionBitacora.event("ENDP-003", "|No export formats enabled|", month, day)
-                                    conexionBitacora.event("CMD-P001", "|Command,PASSED|", month, day)
-                                    green_label.configure(image=image_green_full)
-                                    red_label.configure(image=image_red)
-                                    
-                                elif errors:
-                                    # Hubo errores en algunos formatos
-                                    error_message = "; ".join(errors)
-                                    safe_insert(f"⚠ Some files were not generated: {error_message}\n", "orange")
-                                    
-                                    if any_file_created:
-                                        # Al menos un archivo se creó exitosamente
-                                        safe_insert("✓ At least one file was successfully generated\n")
-                                        conexionBitacora.event("ENDP-004", f"|Partial export| {error_message}", month, day)
-                                        conexionBitacora.event("CMD-P001", "|Command,PASSED|", month, day)
-                                        green_label.configure(image=image_green_full)
-                                        red_label.configure(image=image_red)
-                                    else:
-                                        # Ningún archivo se creó
-                                        safe_insert("✗ No file could be generated\n", "red")
-                                        try:
-                                            conn.send("FAILED".encode('UTF-8'))
-                                        except Exception as e:
-                                            safe_insert(f"Error enviando: {e}", "red")
-                                            
-                                        conexionBitacora.event("ENDP-002", f"|No files created| {error_message}", month, day)
-                                        conexionBitacora.event("CMD-F001", "|Command,FAILED|", month, day)
-                                        green_label.configure(image=image_green)
-                                        red_label.configure(image=image_red_full)
-                                
-                                else:
-                                    # Todos los formatos habilitados se generaron exitosamente
-                                    # safe_insert("✓ All files were successfully generated\n")
-                                    conexionBitacora.event("ENDP-001", "|Command received| " + cadena, month, day)
-                                    conexionBitacora.event("CMD-P001", "|Command,PASSED|", month, day)
-                                    green_label.configure(image=image_green_full)
-                                    red_label.configure(image=image_red)
                                         
                             else:
                                 try:
@@ -1151,10 +1287,7 @@ def worker(conn, addr):
                                     if len(name_piece) > 13:
                                         conn.settimeout(None)
                                         piece = name_piece + ", PASSED"
-                                        try:
-                                            conn.send(piece.encode('UTF-8'))
-                                        except Exception as e:
-                                            safe_insert(f"Error enviando: {e}", "red")
+                                        
                                         entry_piece.configure(state="readonly", textvariable=piece_name)
                                         piece_name.set(name_piece)
                                                     
@@ -1162,9 +1295,13 @@ def worker(conn, addr):
                                         if componente == "FAILED":
                                             safe_insert("Error storing component in database, verify the string", "red")
                                             logging.error("Error storing component in database")
+                                            conn.send("FAILED".encode('UTF-8'))
                                             break
                                         safe_insert("Command received-> "+cadena+" actuator: "+name_piece+"\n"+"Command COMPONENT PASSED"+"\n")
-                                            
+                                        try:
+                                            conn.send(piece.encode('UTF-8'))
+                                        except Exception as e:
+                                            safe_insert(f"Error enviando: {e}", "red")
                                         conexionBitacora.event("SPP-001","|Command received| "+cadena+" actuator: "+name_piece,month,day)
                                         conexionBitacora.event("CMD-P001","|Command,PASSED|",month,day)
 
@@ -1227,10 +1364,7 @@ def worker(conn, addr):
 
                             if len(name_piece) > 13:
                                 piece = name_piece + ", PASSED"
-                                try:
-                                    conn.send(piece.encode('UTF-8'))
-                                except Exception as e:
-                                    safe_insert(f"Error enviando: {e}", "red")
+                                
                                 entry_piece.configure(state="readonly", textvariable=piece_name)
                                 piece_name.set(name_piece)
                                                     
@@ -1238,8 +1372,13 @@ def worker(conn, addr):
                                 if componente == "FAILED":
                                     safe_insert("Error storing component in database, verify the string", "red")
                                     logging.error("Error storing component in database")
+                                    conn.send("FAILED".encode('UTF-8'))
                                     break
                                 safe_insert("Command received-> "+cadena+" actuator: "+name_piece+"\n"+"Command COMPONENT PASSED")
+                                try:
+                                    conn.send(piece.encode('UTF-8'))
+                                except Exception as e:
+                                    safe_insert(f"Error enviando: {e}", "red")
                                     
                                 conexionBitacora.event("SPP-001","|Command received| "+cadena+" actuator: "+name_piece,month,day)
                                 conexionBitacora.event("CMD-P001","|Command,PASSED|",month,day)
@@ -1288,6 +1427,7 @@ def worker(conn, addr):
                         
                         configurador = conexion.configurador()
                         registros_reales = procesar_registros.verificar_archivos()
+                        url_api = ""
                         if "ST10" in configurador[3]:
                             if registros_reales == "EMPTY_FILE":
                                 safe_insert("Command received-> "+comando_completo+"\n"+"No shop_order file found\n"+"Command FAILED", "red")
@@ -1302,8 +1442,16 @@ def worker(conn, addr):
                                 green_label.configure(image=image_green)
                                 red_label.configure(image=image_red_full)
                             elif registros_reales == "EMPTY_DATA":
-                                safe_insert("Command received-> "+comando_completo+"\n"+"Shop_order file is empty\n"+"Command FAILED", "red")
-                                logging.warning("Command received-> "+comando_completo+"\n"+"Shop_order file is empty\n"+"Command FAILED")
+                                urls = conexion.get_urls()
+                                for name, url in urls.items():
+                                    if 'TRACEABILITY' in name.upper():
+                                        logging.info(f"URL de TRACEABILITY encontrada: {name} -> {url}")
+                                        url_api = url
+                                exito, nombre, cantidad = shopo_order_api.consultar_api_y_guardar(url_api, configurador[5])
+                                registros = procesar_registros.verificar_archivos()
+                                label_total_seriales_count.configure(text=str(registros))
+                                safe_insert("Command received-> "+comando_completo+"\n"+"Shop_order file is empty, try again\n"+"Command FAILED", "red")
+                                logging.warning("Command received-> "+comando_completo+"\n"+"Shop_order file is empty, try again\n"+"Command FAILED")
                                 try:
                                     conn.send("FAILED".encode('UTF-8'))
                                 except Exception as e:
@@ -1317,25 +1465,53 @@ def worker(conn, addr):
                                 part_number, serial_number, process_name = leer_shop_order.leer_archivo_generado() 
                                 serial = conexion.get_part_numbers(serial_number)
                                 if serial != "PASSED":
-                                    resultado, mensaje = procesar_registros.procesar_primer_registro()
-                                    conn.send(f"{serial}".encode('UTF-8'))
-                                    safe_insert(f"Command received-> {comando_completo} part: {serial}\nCommand PASSED\nPrinting...\n{mensaje}", "green")
-                                    logging.info("Command received-> {comando_completo} part: {serial}\nCommand PASSED\nPrinting...\n{mensaje}")
+                                    safe_insert("🔄 Validating with INTERLOCKING API...\n", "blue")
+                                    logging.info("Llamando a API INTERLOCKING")
 
-                                    green_label.configure(image=image_green_full)
-                                    red_label.configure(image=image_red)
+                                    interlocking_success, interlocking_message, attempts, response_time_ms = interlocking_api.validate_station_10()
+
+                                    if not interlocking_success:
+                                        safe_insert(f"❌ INTERLOCKING API Error después de {attempts} intentos (último tiempo: {response_time_ms} ms): {interlocking_message}\n", "red")
+                                        logging.error(f"INTERLOCKING API Error después de {attempts} intentos (tiempo: {response_time_ms} ms): {interlocking_message}")
+                                        
+                                        try:
+                                            conn.send("FAILED".encode('UTF-8'))
+                                        except Exception as e:
+                                            safe_insert(f"Error enviando: {e}", "red")
+                                        
+                                        conexionBitacora.event("LAS-002", f"|Command received| {comando_completo} - INTERLOCKING API Error después de {attempts} intentos (tiempo: {response_time_ms} ms)", month, day)
+                                        conexionBitacora.event("CMD-F001", "|Command,FAILED|", month, day)
+                                        
+                                        green_label.configure(image=image_green)
+                                        red_label.configure(image=image_red_full)
+                                        cadena = ""
+                                        pieza = ""
+                                        break
+                                    else:
+                                        safe_insert(f"✅ INTERLOCKING validation PASSED (después de {attempts} intento(s), tiempo respuesta: {response_time_ms} ms)\n", "green")
+                    
+                                        resultado, mensaje = procesar_registros.procesar_primer_registro()
+                                        serial_passed = f"{serial}, PASSED"
+                                        conn.send(f"{serial_passed}".encode('UTF-8'))
+                                        registros = procesar_registros.verificar_archivos()
+                                        label_total_seriales_restantes_count.configure(text=str(registros))
+                                        safe_insert(f"Command received-> {comando_completo} part: {serial}\nCommand PASSED\nPrinting...\n{mensaje}", "green")
+                                        logging.info(f"Command received-> {comando_completo} part: {serial}\nCommand PASSED\nPrinting...\n{mensaje}")
+
+                                        green_label.configure(image=image_green_full)
+                                        red_label.configure(image=image_red)
                                     
                                 else:
                                     resultado, mensaje = procesar_registros.procesar_primer_registro()
                                     conn.send("FAILED".encode('UTF-8'))
                                     safe_insert(f"Command received-> {comando_completo} part: {serial}\nCommand PASSED\nDon't print\n", "orange")
-                                    logging.info("Command received-> {comando_completo} part: {serial}\nCommand PASSED\nDon't print\n")
+                                    logging.info(f"Command received-> {comando_completo} part: {serial}\nCommand PASSED\nDon't print\n")
                                     green_label.configure(image=image_green)
                                     red_label.configure(image=image_red_full)
                         else:
                             conn.send("FAILED".encode('UTF-8'))
-                            safe_insert(f"Command received-> {comando_completo} part: {serial_number}\nCommand FAILED\n", "RED")
-                            logging.warning("Command received-> {comando_completo} part: {serial_number}\nCommand FAILED\n")
+                            safe_insert(f"Command received-> {comando_completo}\nCommand FAILED\n", "RED")
+                            logging.warning("Command received-> {comando_completo}\nCommand FAILED\n")
 
                             green_label.configure(image=image_green)
                             red_label.configure(image=image_red_full)

@@ -11,7 +11,7 @@ def interlocking_station_10():
     station = configurador[3]
     product = configurador[4]
 
-    part_number, serial_number, process_name = leer_shop_order.leer_archivo_generado()
+    part_number, serial_number, process_name_shop_order = leer_shop_order.leer_archivo_generado()
 
     programas = conexion.select_programs()
 
@@ -33,7 +33,7 @@ def interlocking_station_10():
         "product": part_number,
         "station": station,
         "operator": operator,
-        "process_name": process_name,
+        "process_name": process_name, #process_name_shop_order,
         "location": ""
     }
     # print(json.dumps(interlocking_station10, indent=4))
