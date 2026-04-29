@@ -33,7 +33,7 @@ def interlocking_station_10():
         "product": part_number,
         "station": station,
         "operator": operator,
-        "process_name": process_name_shop_order,
+        "process_name": process_name, #process_name_shop_order,
         "location": ""
     }
     # print(json.dumps(interlocking_station10, indent=4))
