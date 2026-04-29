@@ -1105,3 +1105,9 @@
 2026-04-29 12:09:14 [DEBUG] PngImagePlugin:204 - STREAM b'gAMA' 54 4
 2026-04-29 12:09:14 [DEBUG] PngImagePlugin:204 - STREAM b'pHYs' 70 9
 2026-04-29 12:09:14 [DEBUG] PngImagePlugin:204 - STREAM b'IDAT' 91 65445
+2026-04-29 13:48:45 [INFO] Traceability:71 - ======================================================================
+2026-04-29 13:48:45 [INFO] Traceability:72 - 🔄 LOGGING CONFIGURADO - INICIO DE APLICACIÓN
+2026-04-29 13:48:45 [INFO] Traceability:73 - 📁 Archivo diario: logs/server_20260429.log
+2026-04-29 13:48:45 [INFO] Traceability:74 - 📁 Archivo general: logs/server.log
+2026-04-29 13:48:45 [INFO] Traceability:75 - 📅 Fecha: 2026-04-29 13:48:45
+2026-04-29 13:48:45 [INFO] Traceability:76 - ======================================================================
