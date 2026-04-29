@@ -41,16 +41,16 @@ def commit(cadena, name_piece):
     match options[1]:
         case "Pressfit":
             # station = conexion.stations()
-            print(options)
-            print(len(options))
-            print(options[-3])
+            # print(options)
+            # print(len(options))
+            # print(options[-3])
             if len(options) == 32:
                 force = options[2:11]
                 distance = options[11:20]
                 speed = options[20:-3]
-                print(force)
-                print(distance)
-                print(speed)
+                # print(force)
+                # print(distance)
+                # print(speed)
                 result = ""
                 result_distance = ""
                 result_speed = ""
