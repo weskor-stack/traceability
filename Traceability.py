@@ -28,6 +28,7 @@ import procesar_registros
 import interlocking_api
 import traceability_api
 import shopo_order_api
+import ConfiguracionURLs
 
 def configurar_logging():
     """Configura el sistema de logging"""
@@ -136,6 +137,31 @@ root.iconbitmap("favicon.ico")
 root.grid_columnconfigure((0, 1), weight=1)
 root.grid_rowconfigure(0, weight=1)
 
+def abrir_configuracion_urls():
+    try:
+        import tkinter as tk
+        
+        ventana = tk.Toplevel(root)
+        ventana.title("Configuración de URLs")   
+        ventana.attributes("-topmost", True)
+        
+        # Intentar cargar el icono
+        ruta_icono = os.path.abspath("favicon.ico")
+        def forzar_icono():
+            try:
+                ventana.wm_iconbitmap(ruta_icono)
+                ventana.iconbitmap(ruta_icono)
+            except:
+                pass
+        ventana.after(250, forzar_icono)
+        from ConfiguracionURLs import FormularioApiConfig 
+        app_urls = FormularioApiConfig(ventana)
+        
+    except Exception as e:
+        print(f"Error al abrir la configuración de URLs: {e}")
+        import logging
+        logging.error(f"Error al abrir la configuración de URLs: {e}")
+
 def safe_exit():
     global running, current_operator, config_data, login_window, logout_window
 
@@ -186,6 +212,16 @@ piece_name = StringVar()
 # Crear frame principal
 frame = ctk.CTkFrame(master=root)
 frame.pack(pady=30, padx=60, fill="both", expand=True)
+
+button_urls = ctk.CTkButton(
+    master=frame, 
+    text="URLs 🔗", 
+    width=80, 
+    fg_color="#3580b3", 
+    hover_color="#555555",
+    command=abrir_configuracion_urls 
+)
+button_urls.place(x=1140, y=200)
 
 lbl_station = ctk.CTkLabel(master=frame, text='Station:')
 lbl_station.pack(side=ctk.LEFT, pady=10, padx=40, anchor='nw')
