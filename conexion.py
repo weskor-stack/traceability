@@ -383,7 +383,7 @@ def parameters_pressfit(element, name_piece):
 
         # Obtener parte activa
         cur.execute(
-            "SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,)
+            "SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(name_piece,)
         )
         part = cur.fetchone()
         if not part:
@@ -392,6 +392,8 @@ def parameters_pressfit(element, name_piece):
         value = element[1]
         low_limit = element[2]
         high_limit = element[3]
+        if value == "" and low_limit == "" and high_limit == "":
+            return "GENERAL_ERROR"
         data_type = element[4]
         units = element[5]
         result = element[6]
@@ -457,7 +459,7 @@ def parameters_screwing(element, name_piece):
 
         # Obtener part_id
         cursor = conn.cursor()
-        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,))
+        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(name_piece,))
         part = cursor.fetchone()
         cursor.close()
 
@@ -543,7 +545,7 @@ def parameters_inspection_vs(element, name_piece):
 
         # Obtener part
         cursor = conn.cursor()
-        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,))
+        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(name_piece,))
         part = cursor.fetchone()
         cursor.close()
 
@@ -633,7 +635,7 @@ def parameters_inspection_xt(element, name_piece):
 
         # Obtener part
         cursor = conn.cursor()
-        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,))
+        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(name_piece,))
         part = cursor.fetchone()
         cursor.close()
 
@@ -721,7 +723,7 @@ def parameters_electrical(element, name_piece):
 
         # Obtener parte
         cursor = conn.cursor()
-        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(name_piece,))
+        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(name_piece,))
         part = cursor.fetchone()
         cursor.close()
 
@@ -792,7 +794,7 @@ def duration(element, name_piece):
 
         # Obtener parte activa
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s", (name_piece,))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC", (name_piece,))
             part = cursor.fetchone()
             if not part:
                 # print("[ERROR] Pieza no encontrada")
@@ -833,7 +835,7 @@ def duration(element, name_piece):
 def pieces(parte):
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 2 AND part_number = %s LIMIT 1",(parte,))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 2 AND part_number = %s ORDER BY part_id DESC LIMIT 1",(parte,))
             part = cursor.fetchone()
             if not part:
                 return None  # O podrías lanzar una excepción si prefieres
@@ -1462,7 +1464,7 @@ def component_store(component_name,descripcion,parte):
     try:
         # --- Obtener part activo ---
         cursor = conn.cursor()
-        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 1 AND part_number = %s",(parte,))
+        cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC LIMIT 1",(parte,))
         part = cursor.fetchone()
         cursor.close()
 
@@ -1521,7 +1523,7 @@ def parameters_continuity(element):
 
         # Obtener part activo
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(element[9],))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(element[9],))
             part = cursor.fetchone()
         
         if not part:
@@ -1601,7 +1603,7 @@ def parameters_leak(element):
 
         # Obtener part activo
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(element[10],))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(element[10],))
             part = cursor.fetchone()
         
         if not part:
@@ -1673,7 +1675,7 @@ def parameters_temperature(element):
 
         # Obtener part activo
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(element[10],))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(element[10],))
             part = cursor.fetchone()
         
         if not part:
@@ -1745,7 +1747,7 @@ def parameters_welding(element):
 
         # Obtener part activo
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(element[8],))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(element[8],))
             part = cursor.fetchone()
         
         if not part:
@@ -1795,7 +1797,7 @@ def parameters_heatstake(element):
     try:
         # Obtener part activo
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(element[4],))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(element[4],))
             part = cursor.fetchone()
         
         if not part:
@@ -1842,7 +1844,7 @@ def parameters_graph(element):
     try:
         # Obtener part activo
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s",(element[5],))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(element[5],))
             part = cursor.fetchone()
         
         if not part:
@@ -2266,7 +2268,7 @@ def configurador():
     
     # Obtener configuración actual
     cursor = conn.cursor()
-    cursor.execute("SELECT machine_id, process_name, operator, station, product FROM configurador")
+    cursor.execute("SELECT machine_id, process_name, operator, station, product, shop_order FROM configurador")
     configurador = cursor.fetchone()
     cursor.close()
 
@@ -2344,7 +2346,7 @@ def heatstake_info(serial_number):
     # Obtener atributos actuales
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 2 AND part_number = %s",(serial_number,))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 2 AND part_number = %s ORDER BY part_id DESC LIMIT 1",(serial_number,))
             part = cursor.fetchone()
         
         if not part:
@@ -2370,7 +2372,7 @@ def obtener_parte(serial_number):
      # Obtener part_id
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id, create_registration FROM part WHERE part_number = %s",(serial_number,))
+            cursor.execute("SELECT part_id, part_number, model_id, create_registration FROM part WHERE part_number = %s ORDER BY part_id DESC LIMIT 1",(serial_number,))
             part = cursor.fetchone()
         
         if not part:
@@ -2388,7 +2390,7 @@ def obtener_image(serial_number):
     # Obtener part_id
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 2 AND part_number = %s",(serial_number,))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 2 AND part_number = %s ORDER BY part_id DESC LIMIT 1",(serial_number,))
             part = cursor.fetchone()
         
         if not part:
@@ -2405,6 +2407,48 @@ def obtener_image(serial_number):
         print("[ERROR] No se encontraron atributos.")
         return []
 #################################################################################################################
+
+################################################################# Obtener contadores de seriales ###########################################################################
+def seriales_procesados():
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT COUNT(DISTINCT part_id) FROM part WHERE status_id = 2")
+            count = cursor.fetchone()[0]
+            return count
+    except Exception as e:
+        print("[ERROR] No se encontraron atributos.")
+        return 0
+    
+def seriales_pendientes():
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT COUNT(DISTINCT part_id) FROM part WHERE status_id = 3")
+            count = cursor.fetchone()[0]
+            return count
+    except Exception as e:
+        print("[ERROR] No se encontraron atributos.")
+        return 0
+
+def unidades_falladas():
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT COUNT(DISTINCT part_id) FROM duration WHERE taskresult = 'FAILED'")
+            count = cursor.fetchone()[0]
+            return count
+    except Exception as e:
+        print("[ERROR] No se encontraron atributos.")
+        return 0
+    
+def multiplo_series():
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT CASE WHEN COUNT(DISTINCT part_id) % 100 = 0 AND COUNT(DISTINCT part_id) > 0 THEN 'multiplo' ELSE 'no_multiplo' END AS tipo_conteo FROM part;")
+            count = cursor.fetchone()[0]
+            return count
+    except Exception as e:
+        print("[ERROR] No se encontraron atributos.")
+        return 0
+############################################################################################################################################################
 # name = "P1895152-00-G:SHG2242791000290"
 # parameters_pressfit(['F', '50', '10', '100', 'Numeric', 'N', 'PASSED', 'Comentarios', 'dwell_time'],name)
 # parameters_electrical(['Ct', '50', '10', '100', 'Numeric', 'N', 'OK', 'Comentarios'],name)
