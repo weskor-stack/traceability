@@ -205,7 +205,7 @@ button_config = ctk.CTkButton(
     width=80, 
     fg_color="#3580b3", 
     hover_color="#555555",
-    command=abrir_configurador
+    command=abrir_configuracion_urls
 )
 
 button_urls = ctk.CTkButton(
