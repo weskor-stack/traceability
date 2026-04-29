@@ -345,7 +345,6 @@ def listar_archivos_existentes(directorio=""):
     
     return archivos
 
-
 # ==================== CONFIGURACIÓN PRINCIPAL ====================
 
 # if __name__ == "__main__":
@@ -372,7 +371,7 @@ def listar_archivos_existentes(directorio=""):
     # print("\nEjecutando consulta a API real...")
     
     # Descomentar la siguiente línea para ejecutar con la API real
-    # exito, nombre, cantidad = consultar_api_y_guardar(URL_API, SOP_ORDER)
+    #exito, nombre, cantidad = consultar_api_y_guardar(URL_API, SOP_ORDER)
     
     # if exito:
     #     print(f"\n✅ Proceso completado exitosamente!")

@@ -3,30 +3,60 @@ from tkinter import ttk
 import conexion
 from datetime import datetime
 
+# --- COLORES Y FUENTES DE LA ESTÉTICA ---
+BG_HEADER      = "#1565C0"
+BG_BUTTON_BAR  = "#F3F3F3"
+BG_MAIN        = "#FFFFFF"
+FG_WHITE       = "#FFFFFF"
+FG_BLUE_LABEL  = "#00479E"
+BORDER_COLOR   = "#000000"
+
+FONT_HEAD      = ("Segoe UI", 16, "bold")
+FONT_LABEL     = ("Segoe UI", 8, "bold")
+FONT_MONO      = ("Consolas", 10)
+FONT_BTN       = ("Segoe UI", 9, "bold")
+
 class TypeTestCRUD:
     def __init__(self, root):
-
         self.root = root
         self.root.title("Tipo de Prueba")
         self.root.geometry("600x400")
-        self.root.iconbitmap("favicon.ico")
+        try: self.root.iconbitmap("favicon.ico")
+        except: pass
+        self.root.configure(bg=BG_MAIN)
+        
         self.data = {}
+        
         style = ttk.Style()
-        style.theme_use("default")
-        style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
-        style.configure("Treeview", rowheight=28, font=("Segoe UI", 10))
-        style.map("Treeview", background=[("selected", "#757575")])
-        frame = tk.Frame(root)
-        frame.pack(pady=10)
+        style.theme_use("clam")
+        style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"), background=BG_BUTTON_BAR, foreground="black", relief="flat")
+        style.configure("Treeview", rowheight=28, font=("Segoe UI", 10), background=BG_MAIN, fieldbackground=BG_MAIN, borderwidth=1, bordercolor=BORDER_COLOR)
+        style.map("Treeview", background=[("selected", "#D0E8FF")], foreground=[("selected", "black")])
 
-        tk.Button(frame, text="Agregar", bg="#1D8A21", fg="white",
+        # ====== HEADER ======
+        header = tk.Frame(self.root, bg=BG_HEADER)
+        header.pack(fill="x")
+        tk.Label(header, text="⚙ Tipo de Prueba", font=FONT_HEAD, bg=BG_HEADER, fg=FG_WHITE).pack(anchor="w", padx=15, pady=15)
+
+        # ====== BARRA DE BOTONES ======
+        frame = tk.Frame(root, bg=BG_BUTTON_BAR)
+        frame.pack(fill="x")
+        
+        btn_inner = tk.Frame(frame, bg=BG_BUTTON_BAR)
+        btn_inner.pack(side="left", padx=15, pady=10)
+
+        tk.Button(btn_inner, text="➕ Agregar", font=FONT_BTN, bg="#1D8A21", fg="white", relief="flat", cursor="hand2", padx=15, pady=5,
                   command=self.abrir_agregar).grid(row=0, column=0, padx=5)
 
-        tk.Button(frame, text="Actualizar", bg="#105FA0", fg="white",
+        tk.Button(btn_inner, text="✏️ Actualizar", font=FONT_BTN, bg="#105FA0", fg="white", relief="flat", cursor="hand2", padx=15, pady=5,
                   command=self.abrir_actualizar).grid(row=0, column=1, padx=5)
 
+        # ====== TABLA ======
+        tabla_frame = tk.Frame(self.root, bg=BG_MAIN)
+        tabla_frame.pack(fill="both", expand=True, padx=15, pady=15)
+
         self.tabla = ttk.Treeview(
-            root,
+            tabla_frame,
             columns=("Nombre", "Status"),
             show="headings"
         )
@@ -34,10 +64,11 @@ class TypeTestCRUD:
         self.tabla.heading("Status", text="Status")
         self.tabla.column("Nombre", width=300)
         self.tabla.column("Status", width=100, anchor="center")
-        self.tabla.pack(fill="both", expand=True, padx=10, pady=10)
+        self.tabla.pack(fill="both", expand=True)
 
         # Cargar datos al final cuando tabla y data ya existen
         self.cargar_datos()
+
     def status_texto(self, status_id):
         return "Enabled" if status_id == 1 else "Not enabled"
     
@@ -61,7 +92,8 @@ class TypeTestCRUD:
     # ===== AGREGAR =====
     def abrir_agregar(self):
         VentanaAgregar(self)
-        self.root.iconbitmap("favicon.ico")
+        try: self.root.iconbitmap("favicon.ico")
+        except: pass
 
     def agregar(self, nombre):
     # Todos a 2 en BD y en UI
@@ -124,14 +156,24 @@ class VentanaAgregar:
         self.principal = principal
         self.ventana = tk.Toplevel()
         self.ventana.title("Agregar")
-        self.ventana.geometry("250x150")
-        self.ventana.iconbitmap("favicon.ico")
+        self.ventana.geometry("300x200")
+        self.ventana.configure(bg=BG_MAIN)
+        try: self.ventana.iconbitmap("favicon.ico")
+        except: pass
+        
         self.nombre = tk.StringVar()
 
-        tk.Label(self.ventana, text="Nombre").pack(pady=5)
-        tk.Entry(self.ventana, textvariable=self.nombre).pack()
-        tk.Button(self.ventana, text="Guardar",
-                  bg="#1D8A21", fg="white",
+        header = tk.Frame(self.ventana, bg=BG_HEADER)
+        header.pack(fill="x")
+        tk.Label(header, text="Agregar", font=("Segoe UI", 12, "bold"), bg=BG_HEADER, fg=FG_WHITE).pack(anchor="w", padx=15, pady=10)
+
+        form_frame = tk.Frame(self.ventana, bg=BG_MAIN)
+        form_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+        tk.Label(form_frame, text="NOMBRE", bg=BG_MAIN, fg=FG_BLUE_LABEL, font=FONT_LABEL).pack(anchor="w", pady=(5,0))
+        tk.Entry(form_frame, textvariable=self.nombre, bg=BG_MAIN, fg="black", relief="flat", font=FONT_MONO, highlightthickness=1, highlightbackground=BORDER_COLOR).pack(fill="x", ipady=4, pady=(2, 10))
+        
+        tk.Button(self.ventana, text="Guardar", font=FONT_BTN, bg="#1D8A21", fg="white", relief="flat", cursor="hand2", padx=15, pady=5,
                   command=self.guardar).pack(pady=10)
 
     def guardar(self):
@@ -146,18 +188,29 @@ class VentanaActualizar:
         self.item = item
         self.ventana = tk.Toplevel()
         self.ventana.title("Actualizar")
-        self.ventana.geometry("250x200")
-        self.ventana.iconbitmap("favicon.ico")
+        self.ventana.geometry("300x260")
+        self.ventana.configure(bg=BG_MAIN)
+        try: self.ventana.iconbitmap("favicon.ico")
+        except: pass
+        
         self.nombre = tk.StringVar(value=datos["nombre"])
         self.status = tk.IntVar(value=datos["status"])
 
-        tk.Label(self.ventana, text="Nombre").pack()
-        tk.Entry(self.ventana, textvariable=self.nombre).pack()
-        tk.Label(self.ventana, text="Status").pack()
-        tk.Radiobutton(self.ventana, text="Enabled", variable=self.status, value=1).pack()
-        tk.Radiobutton(self.ventana, text="Not Enabled", variable=self.status, value=2).pack()  # 0 -> 2
-        tk.Button(self.ventana, text="Guardar",
-                  bg="#4CAF50", fg="white",
+        header = tk.Frame(self.ventana, bg=BG_HEADER)
+        header.pack(fill="x")
+        tk.Label(header, text="Actualizar", font=("Segoe UI", 12, "bold"), bg=BG_HEADER, fg=FG_WHITE).pack(anchor="w", padx=15, pady=10)
+
+        form_frame = tk.Frame(self.ventana, bg=BG_MAIN)
+        form_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+        tk.Label(form_frame, text="NOMBRE", bg=BG_MAIN, fg=FG_BLUE_LABEL, font=FONT_LABEL).pack(anchor="w")
+        tk.Entry(form_frame, textvariable=self.nombre, bg=BG_MAIN, fg="black", relief="flat", font=FONT_MONO, highlightthickness=1, highlightbackground=BORDER_COLOR).pack(fill="x", ipady=4, pady=(2, 10))
+        
+        tk.Label(form_frame, text="STATUS", bg=BG_MAIN, fg=FG_BLUE_LABEL, font=FONT_LABEL).pack(anchor="w", pady=(5,0))
+        tk.Radiobutton(form_frame, text="Enabled", variable=self.status, value=1, bg=BG_MAIN, font=("Segoe UI", 9)).pack(anchor="w")
+        tk.Radiobutton(form_frame, text="Not Enabled", variable=self.status, value=2, bg=BG_MAIN, font=("Segoe UI", 9)).pack(anchor="w")  # 0 -> 2
+        
+        tk.Button(self.ventana, text="Guardar", font=FONT_BTN, bg="#4CAF50", fg="white", relief="flat", cursor="hand2", padx=15, pady=5,
                   command=self.guardar).pack(pady=10)
 
     def guardar(self):
@@ -169,6 +222,7 @@ class VentanaActualizar:
         self.ventana.destroy()
 
 # ===== MAIN =====
-root = tk.Tk()
-app = TypeTestCRUD(root)
-root.mainloop()
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = TypeTestCRUD(root)
+    root.mainloop()

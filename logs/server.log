@@ -1,18 +1,9 @@
-2026-04-20 17:29:05 [INFO] Traceability:78 - ======================================================================
-2026-04-20 17:29:05 [INFO] Traceability:79 - 🔄 LOGGING CONFIGURADO - INICIO DE APLICACIÓN
-2026-04-20 17:29:05 [INFO] Traceability:80 - 📁 Archivo diario: logs/server_20260420.log
-2026-04-20 17:29:05 [INFO] Traceability:81 - 📁 Archivo general: logs/server.log
-2026-04-20 17:29:05 [INFO] Traceability:82 - 📅 Fecha: 2026-04-20 17:29:05
-2026-04-20 17:29:05 [INFO] Traceability:83 - ======================================================================
-2026-04-20 17:29:07 [INFO] Traceability:141 - Cerrando aplicación...
-2026-04-20 17:29:07 [INFO] Traceability:158 - Socket principal cerrado.
-2026-04-20 17:29:07 [ERROR] Traceability:1318 - Error aceptando conexión: [WinError 10038] Se intentó realizar una operación en un elemento que no es un socket
-2026-04-20 17:29:21 [INFO] Traceability:78 - ======================================================================
-2026-04-20 17:29:21 [INFO] Traceability:79 - 🔄 LOGGING CONFIGURADO - INICIO DE APLICACIÓN
-2026-04-20 17:29:21 [INFO] Traceability:80 - 📁 Archivo diario: logs/server_20260420.log
-2026-04-20 17:29:21 [INFO] Traceability:81 - 📁 Archivo general: logs/server.log
-2026-04-20 17:29:21 [INFO] Traceability:82 - 📅 Fecha: 2026-04-20 17:29:21
-2026-04-20 17:29:21 [INFO] Traceability:83 - ======================================================================
-2026-04-20 17:29:31 [INFO] Traceability:141 - Cerrando aplicación...
-2026-04-20 17:29:31 [INFO] Traceability:158 - Socket principal cerrado.
-2026-04-20 17:29:31 [ERROR] Traceability:1318 - Error aceptando conexión: [WinError 10038] Se intentó realizar una operación en un elemento que no es un socket
+<<<<<<< HEAD
+2026-04-29 13:48:45 [INFO] Traceability:71 - ======================================================================
+2026-04-29 13:48:45 [INFO] Traceability:72 - 🔄 LOGGING CONFIGURADO - INICIO DE APLICACIÓN
+2026-04-29 13:48:45 [INFO] Traceability:73 - 📁 Archivo diario: logs/server_20260429.log
+2026-04-29 13:48:45 [INFO] Traceability:74 - 📁 Archivo general: logs/server.log
+2026-04-29 13:48:45 [INFO] Traceability:75 - 📅 Fecha: 2026-04-29 13:48:45
+2026-04-29 13:48:45 [INFO] Traceability:76 - ======================================================================
+=======
+>>>>>>> 2dff5b2434bb4732f3e55baba979a5af30cf7ea4
