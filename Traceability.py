@@ -29,6 +29,7 @@ import interlocking_api
 import traceability_api
 import shopo_order_api
 import ConfiguracionURLs
+import Configurador
 
 def configurar_logging():
     """Configura el sistema de logging"""
@@ -125,6 +126,26 @@ root.iconbitmap("favicon.ico")
 root.grid_columnconfigure((0, 1), weight=1)
 root.grid_rowconfigure(0, weight=1)
 
+def abrir_configurador():
+    try:
+        ventana = ctk.CTkToplevel(root)
+        ventana.title("Configurador")   
+        ventana.attributes("-topmost", True)
+        ruta_icono = os.path.abspath("favicon.ico")
+        def forzar_icono():
+            try:
+                ventana.wm_iconbitmap(ruta_icono)
+                ventana.iconbitmap(ruta_icono)
+            except Exception as e:
+                print(f"Error forzando icono: {e}")
+        
+        ventana.after(250, forzar_icono)
+
+        from Configurador import ConfiguradorUI
+        app_config = ConfiguradorUI(ventana)
+        
+    except Exception as e:
+        print(f"Error al abrir el configurador: {e}")
 def abrir_configuracion_urls():
     try:
         import tkinter as tk
@@ -197,17 +218,19 @@ station_name = StringVar()
 piece_name = StringVar()
 
 # Crear frame principal
+# Crear frame principal
 frame = ctk.CTkFrame(master=root)
 frame.pack(pady=30, padx=60, fill="both", expand=True)
+
+# Crear el botón
 button_config = ctk.CTkButton(
     master=frame, 
     text="Config ⚙", 
     width=80, 
     fg_color="#3580b3", 
     hover_color="#555555",
-    command=abrir_configuracion_urls
+    command=abrir_configurador
 )
-
 button_urls = ctk.CTkButton(
     master=frame, 
     text="URLs 🔗", 

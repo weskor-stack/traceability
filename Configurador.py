@@ -41,7 +41,7 @@ def apply_theme():
 class ConfiguradorUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Configuración de URLs APIs")
+        self.root.title("Configuración")
         self.root.geometry("600x550") # <- Aumentamos un poquito la altura
         self.root.configure(bg=BG_MAIN)
         apply_theme()
@@ -119,8 +119,8 @@ class ConfiguradorUI:
         status_bar = tk.Label(self.root, textvariable=self.status_var, font=("Segoe UI", 8), bg=BG_MAIN, fg="#888888")
         status_bar.pack(side="bottom", anchor="w", padx=24, pady=5)
 
-    def _on_station_change(self, event):
-        seleccion = self.station.get().strip()
+    def _on_station_change(self, event=None):
+        seleccion = self.station.get().strip().upper()
         self.subtitle_var.set(f"Estación activa: {seleccion} — Todos los campos son obligatorios.")
 
         self.lbl_shop.grid_forget()
@@ -128,15 +128,14 @@ class ConfiguradorUI:
         self.lbl_products.grid_forget()
         self.products.grid_forget()
 
-        # AQUÍ ES DONDE ACOMODAMOS QUE MUESTRE AMBOS EN ST10
-        if seleccion == "ST10_LASER":
+        if "ST10" in seleccion:
             self.lbl_shop.grid(row=2, column=0, sticky="w")
             self.shop_order.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(2, 15), ipady=5)
             
             self.lbl_products.grid(row=4, column=0, sticky="w")
             self.products.grid(row=5, column=0, columnspan=2, sticky="ew", pady=(2, 15), ipady=5)
             
-        elif seleccion in ["ST20_PRESSFIT", "ST30_HEATSTACKING"]:
+        elif "ST20" in seleccion or "ST30" in seleccion:
             self.lbl_products.grid(row=2, column=0, sticky="w")
             self.products.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(2, 15), ipady=5)
 
@@ -211,7 +210,7 @@ class ConfiguradorUI:
                 exito, nombre, cantidad = shopo_order_api.consultar_api_y_guardar(api_url=url_base, shop_order=shop)
                 
                 if not exito or nombre is None or cantidad == 0:
-                    messagebox.showerror("Error API", "La API no devolvió contenido para este Shop Order (resultado nulo o vacío).")
+                    messagebox.showerror("Error API", "Revisar contenido de API (resultado nulo o vacío).")
                     return # Detenemos el proceso de guardado
                     
             except Exception as e:
