@@ -126,7 +126,7 @@ def traceability_station_20(serial_number):
     pin_height = []
 
     for x in pressfit:
-        if x[0] != 3:
+        if x[0] == 1 or x[0] == 2:
             results_inspection.append({
                 "name": x[11],
                 "lowLimit": x[2],

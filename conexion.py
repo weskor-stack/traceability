@@ -699,6 +699,11 @@ def parameters_inspection_xt(element, name_piece):
 
         # Descomponer datos del elemento
         value, low_limit, high_limit, data_type, units, result, metadata = element[1:8]
+        # value = element[1]
+        # low_limit = element[2]
+        # high_limit = element[3]
+        if value == "" and low_limit == "" and high_limit == "":
+            return "GENERAL_ERROR"
         compoperator = evaluation.evaluation(element[1:4])
         description = f"{station[2]} {measurement[1]} XT - Test"
         inspection_measurement_id = measurement[0]
@@ -1895,10 +1900,11 @@ def parameters_heatstake(element):
         return "FAILED"
 
 def parameters_graph(element):
+    print(element)
     try:
         # Obtener part activo
         with conn.cursor() as cursor:
-            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(element[5],))
+            cursor.execute("SELECT part_id, part_number, model_id FROM part WHERE status_id = 3 AND part_number = %s ORDER BY part_id DESC",(element[2],))
             part = cursor.fetchone()
         
         if not part:
@@ -1907,6 +1913,9 @@ def parameters_graph(element):
         part_id = part[0]
         
         # Insertar datos en parameters_continuity
+        if element[0] =="" and element[1] =="":
+            # print("[ERROR] No se proporcionó data_image.")
+            return "GENERAL_ERROR"
         sql = '''
             INSERT INTO graph_image (
                 part_id, data_image, description
@@ -1915,8 +1924,8 @@ def parameters_graph(element):
         
         val = (
             part_id,
-            element[3],  # data_image
-            element[4],  # description
+            element[0],  # data_image
+            element[1],  # description
         )
         
         # print(f"Valores a insertar: {val}")
