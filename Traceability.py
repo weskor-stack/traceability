@@ -358,7 +358,7 @@ label_user = ctk.CTkLabel(master=frame, text="User:")
 label_user.place(x=1050, y=300)
 
 label_users = ctk.CTkLabel(master=frame, text="Admin")
-label_users.place(x=1050, y=320)
+label_users.place(x=1090, y=300)
 
 label_total_seriales = ctk.CTkLabel(master=frame, text="Total serials:")
 
