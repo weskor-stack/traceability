@@ -103,7 +103,7 @@ class FormularioPrincipal:
                     registro[4],  
                     registro[3],  
                     registro[5], 
-                    registro[6], # Índice correspondiente a Time
+                    registro[7], # Índice correspondiente a Time
                 ), tags=(tag,))
 
                 self.data[item] = {
@@ -113,7 +113,7 @@ class FormularioPrincipal:
                     "upper_limit":         registro[3],
                     "lower_limit":         registro[4],
                     "value_expected":      registro[5],
-                    "time":                registro[6], # Guardamos Time en la data
+                    "time":                registro[7], # Guardamos Time en la data
                     "create_registration": registro[8], # Asumiendo que user_id es [7] y fecha es [8]
                 }
         except Exception as e:

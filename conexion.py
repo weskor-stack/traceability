@@ -184,34 +184,6 @@ def insert_attribute(name, unit, upper, lower, value, create_registration):
 
     return attribute_id
 
-def select_attributes():
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT attribute_id, name, unit, upper_limit, lower_limit, value_expected
-        FROM attribute
-    """)
-    data = cursor.fetchall()
-    cursor.close()
-    return data
-
-def update_attribute(attribute_id, name, unit, upper, lower, value):
-    cursor = conn.cursor()
-    sql = """
-        UPDATE attribute
-        SET name=?, unit=?, upper_limit=?, lower_limit=?, value_expected=?
-        WHERE attribute_id=?
-    """
-    cursor.execute(sql, (name, unit, upper, lower, value, attribute_id))
-    conn.commit()
-    cursor.close()
-
-def delete_attribute(attribute_id):
-    cursor = conn.cursor()
-    sql = "DELETE FROM attribute WHERE attribute_id=?"
-    cursor.execute(sql, (attribute_id,))
-    conn.commit()
-    cursor.close()
-
 def insert_program(name, description, create_registration):
     cursor = conn.cursor()
     cursor.execute(
@@ -252,16 +224,16 @@ def select_programs():
 
 def select_attributes():
     cursor = conn.cursor()
-    cursor.execute("SELECT attribute_id, name, unit, upper_limit, lower_limit, value_expected, user_id, create_registration FROM attribute")
+    cursor.execute("SELECT attribute_id, name, unit, upper_limit, lower_limit, value_expected, user_id, time, create_registration FROM attribute")
     data = cursor.fetchall()
     cursor.close()
     return data
 
-def insert_attribute(name, unit, upper_limit, lower_limit, value_expected, create_registration):
+def insert_attribute(name, unit, upper_limit, lower_limit, value_expected, time, create_registration):
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO attribute (name, unit, upper_limit, lower_limit, value_expected,time, create_registration) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-        (name, unit, upper_limit, lower_limit, value_expected, create_registration)
+        "INSERT INTO attribute (name, unit, upper_limit, lower_limit, value_expected, time, create_registration) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+        (name, unit, upper_limit, lower_limit, value_expected, time, create_registration)
     )
     conn.commit()
     attribute_id = cursor.lastrowid
@@ -272,8 +244,8 @@ def update_attribute(attribute_id, name, unit, upper_limit, lower_limit,time, va
     cursor = conn.cursor()
 
     cursor.execute(
-        "UPDATE attribute SET name=%s, unit=%s, upper_limit=%s, lower_limit=%s, value_expected=%s WHERE attribute_id=%s",
-        (name, unit, upper_limit, lower_limit, value_expected, attribute_id)
+        "UPDATE attribute SET name=%s, unit=%s, upper_limit=%s, lower_limit=%s, time=%s, value_expected=%s WHERE attribute_id=%s",
+        (name, unit, upper_limit, lower_limit, time, value_expected, attribute_id)
     )
 
     conn.commit()
