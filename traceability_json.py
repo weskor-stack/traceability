@@ -237,6 +237,8 @@ def traceability_station_30(serial_number):
     pressfit = conexion.pressfit_data(piece_id)
     inspections = conexion.inspection_data3(piece_id)
 
+    heatstake_data = conexion.heatstake_info(serial_number)
+
     divisor = serial_number.index(":")
     partnumber = serial_number[1:divisor]
 
@@ -264,12 +266,25 @@ def traceability_station_30(serial_number):
             "value": x[1]
         })
     
-    unit_information.append({
-        "command": "AddNonTrackedComponent",
-        "ref_designator": "CycleTime",
-        "component_id": duration[2]
-    })
+    # unit_information.append({
+    #     "command": "AddNonTrackedComponent",
+    #     "ref_designator": "CycleTime",
+    #     "component_id": duration[2]
+    # })
 
+    for y in heatstake_data:
+        unit_information.extend([
+            {
+            "command": "AddNonTrackedComponent",
+            "ref_designator": "CycleTime",
+            "component_id": y[1]
+            },
+            {
+            "command": "AddNonTrackedComponent",
+            "ref_designator": y[6],
+            "component_id": y[4]
+            }
+        ])
     start_dt = parser.isoparse(timer_start.split()[0])
     end_dt = parser.isoparse(timer_end.split()[0])
     diferencia = end_dt - start_dt

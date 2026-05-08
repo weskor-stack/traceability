@@ -378,7 +378,7 @@ def commit(cadena, name_piece):
                         data_for_table.append([
                         IT1[0],  # Measurement
                         IT1[1],  # Value
-                        item1[2],  # Lower limit
+                        IT1[2],  # Lower limit
                         IT1[3],  # Upper limit
                         IT1[4],  # Type
                         IT1[5],  # Unit
