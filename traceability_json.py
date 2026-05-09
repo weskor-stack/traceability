@@ -173,8 +173,8 @@ def traceability_station_20(serial_number):
     for x in graph_image:
         unit_information.append({
             "command": "AddNonTrackedComponent",
-            "ref_designator": x[2],
-            "component_id": x[1]
+            "ref_designator": "Data Sampling "+str(x[1]),
+            "component_id": x[2]
         })
 
     componente = conexion.component_data(piece_id)

@@ -104,14 +104,26 @@ def interlocking_station(serial_number):
                         "value": y[2]
                     },
                     {
-                        "name": y[0]+" Expected value",
+                        "name": y[0],
                         "value": y[4]
                     }
                 ])
             elif y[3] == "" and y[2] == "" and y[5] == "" and y[4] != "":
                 unit_information.append(                    {
-                        "name": y[0]+" Expected value",
+                        "name": y[0],
                         "value": y[4]
+                    }
+                )
+            elif y[3] != "" and y[2] == "" and y[5] == "" and y[4] == "":
+                unit_information.append(                    {
+                        "name": y[0]+" Lower limit",
+                        "value": y[3]
+                    }
+                )
+            elif y[3] == "" and y[2] != "" and y[5] == "" and y[4] == "":
+                unit_information.append(                    {
+                        "name": y[0]+" Upper limit",
+                        "value": y[2]
                     }
                 )
 
