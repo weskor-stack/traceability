@@ -118,6 +118,7 @@ def traceability_station_20(serial_number):
     programas = conexion.select_programs()
 
     pressfit = conexion.pressfit_data(piece_id)
+    inspections = conexion.inspection_data3(piece_id)
 
     divisor = serial_number.index(":")
     partnumber = serial_number[1:divisor]
@@ -145,6 +146,16 @@ def traceability_station_20(serial_number):
                 "value": x[1]
             })
     
+    for x in inspections:
+        pin_height.append({
+            "name": x[9],
+            "lowLimit": x[2],
+            "highLimit": x[3],
+            "units": x[5],
+            "status": x[6],
+            "value": x[1]
+        })
+        
     unit_information.append({
         "command": "AddNonTrackedComponent",
         "ref_designator": "CycleTime",
