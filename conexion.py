@@ -2356,6 +2356,13 @@ def get_part_numbers(numero):
         return numero
     
     return "PASSED"
+
+def return_part_serial_number (numero):
+    cursor = conn.cursor()
+    sql = "DELETE FROM serial_number WHERE data = ?"
+    cursor.execute(sql, (numero,))
+    conn.commit()
+    cursor.close()
     
 ################################################################# Configurador ###########################################################################
 

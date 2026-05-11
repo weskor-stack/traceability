@@ -1506,6 +1506,7 @@ def worker(conn, addr):
                                         safe_insert(f"❌ INTERLOCKING API Error después de {attempts} intentos (último tiempo: {response_time_ms} ms): {interlocking_message}\n", "red")
                                         logging.error(f"INTERLOCKING API Error después de {attempts} intentos (tiempo: {response_time_ms} ms): {interlocking_message}")
                                         
+                                        serial = conexion.return_part_serial_number(serial_number)
                                         try:
                                             conn.send("FAILED".encode('UTF-8'))
                                         except Exception as e:
