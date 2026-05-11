@@ -1535,7 +1535,7 @@ def worker(conn, addr):
                                         red_label.configure(image=image_red)
                                     
                                 else:
-                                    # resultado, mensaje = procesar_registros.procesar_primer_registro()
+                                    resultado, mensaje = procesar_registros.procesar_primer_registro()
                                     conn.send("FAILED".encode('UTF-8'))
                                     safe_insert(f"Command received-> {comando_completo} part: {serial}\nCommand PASSED\nDon't print\n", "orange")
                                     logging.info(f"Command received-> {comando_completo} part: {serial}\nCommand PASSED\nDon't print\n")
