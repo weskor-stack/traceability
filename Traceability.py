@@ -566,7 +566,6 @@ def worker(conn, addr):
 
         safe_insert("PLC - Connected"+"\n")
         logging.info("PLC - Connected")
-        conn.send("Ready".encode('UTF-8'))
 
         configurador = conexion.configurador()
         if "ST10" in configurador[3]:
