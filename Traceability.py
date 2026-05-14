@@ -566,7 +566,7 @@ def worker(conn, addr):
 
         safe_insert("PLC - Connected"+"\n")
         logging.info("PLC - Connected")
-        conn.send("Ready".encode('UTF-8'))
+        #conn.send("Ready".encode('UTF-8'))
 
         configurador = conexion.configurador()
         if "ST10" in configurador[3]:
@@ -839,15 +839,15 @@ def worker(conn, addr):
                                 if "ST10" == estacion:
                                     # Estación 10 - Usar estructura específica de Laser
                                     safe_insert(f"📍 Station {estacion} detected - Using ST10 structure\n", "blue")
-                                    interlocking_success, interlocking_message, attempts, response_time_ms  = interlocking_api.validate_station_10()
+                                    interlocking_success, interlocking_message, response_data, attempts, response_time_ms  = interlocking_api.validate_station_10()
                                 else:
                                     # Otras estaciones - Usar estructura genérica
                                     safe_insert(f"📍 Station {estacion} detected - Using generic structure\n", "blue")
-                                    interlocking_success, interlocking_message, attempts, response_time_ms  = interlocking_api.validate_piece(name_piece)
+                                    interlocking_success, interlocking_message, response_data, attempts, response_time_ms  = interlocking_api.validate_piece(name_piece)
 
                                 if interlocking_success:
-                                    safe_insert(f"✅ INTERLOCKING validation PASSED (después de {attempts} intento(s)): {interlocking_message}\n", "green")
-                                    logging.info(f"INTERLOCKING validation PASSED for {name_piece} (intentos: {attempts}, tiempo: {response_time_ms} ms, estación: {estacion})")
+                                    safe_insert(f"✅ INTERLOCKING validation PASSED (después de {attempts} intento(s)): {interlocking_message}\n Response:{response_data}\n", "green")
+                                    logging.info(f"INTERLOCKING validation PASSED for {name_piece} (intentos: {attempts}, tiempo: {response_time_ms} ms, estación: {estacion})\nMessage:{interlocking_message}\n")
                                             
                                     # Registrar en bitácora
                                     conexionBitacora.event("ILK-001", f"INTERLOCKING validation PASSED for ISN: {name_piece} (intentos: {attempts}, tiempo: {response_time_ms} ms, estación: {estacion})", month, day)
@@ -876,7 +876,7 @@ def worker(conn, addr):
                                     )
                                     conexionBitacora.event("CMD-P001", "|Command,PASSED|", month, day)
 
-                                    safe_insert(f"Command received-> {cadena} part: {name_piece}\nCommand PASSED\n", "green")
+                                    safe_insert(f"Command received-> {cadena} part: {name_piece}\nCommand PASSED\n✅ INTERLOCKING validation PASSED (después de {attempts} intento(s)): {interlocking_message}\nResponse:{response_data}\n", "green")
                                     logging.info(f"Command received-> {cadena} part: {name_piece} - Command PASSED")
 
                                     green_label.configure(image=image_green_full)
@@ -885,7 +885,7 @@ def worker(conn, addr):
                                             
                                 else:
                                     # INTERLOCKING falló - NO almacenar la pieza
-                                    safe_insert(f"❌ INTERLOCKING validation FAILED después de {attempts} intentos (último tiempo: {response_time_ms} ms): {interlocking_message}\n", "red")
+                                    safe_insert(f"❌ INTERLOCKING validation FAILED después de {attempts} intentos (último tiempo: {response_time_ms} ms): {interlocking_message}\nResponse:{response_data}", "red")
                                     logging.error(f"INTERLOCKING validation FAILED for {name_piece} después de {attempts} intentos (tiempo: {response_time_ms} ms, estación: {estacion}): {interlocking_message}")
                                         
                                     # Registrar fallo en bitácora con tiempo
@@ -906,7 +906,7 @@ def worker(conn, addr):
                                     )
                                     conexionBitacora.event("CMD-F001", "|Command,FAILED|", month, day)
                                             
-                                    safe_insert(f"Command received-> {cadena} part: {name_piece}\nCommand FAILED - INTERLOCKING validation failed\n", "red")
+                                    safe_insert(f"Command received-> {cadena} part: {name_piece}\nCommand FAILED - INTERLOCKING validation failed\n Response:{response_data}\n", "red")
                                     logging.warning(f"Command received-> {cadena} part: {name_piece} - Command FAILED")
                                         
                                     green_label.configure(image=image_green)
@@ -1059,7 +1059,7 @@ def worker(conn, addr):
                                 )
                                 
                                 if traceability_success:
-                                    safe_insert(f"✅ TRACEABILITY data sent successfully (después de {attempts} intento(s), tiempo respuesta: {response_time_ms} ms)\n", "green")
+                                    safe_insert(f"✅ TRACEABILITY data sent successfully (después de {attempts} intento(s), tiempo respuesta: {response_time_ms} ms)\nMessage:{traceability_message}", "green")
                                     logging.info(f"TRACEABILITY data sent successfully for {serial_number} (intentos: {attempts}, tiempo: {response_time_ms} ms)")
                                     
                                     # Registrar en bitácora
@@ -1500,7 +1500,7 @@ def worker(conn, addr):
                                     safe_insert("🔄 Validating with INTERLOCKING API...\n", "blue")
                                     logging.info("Llamando a API INTERLOCKING")
 
-                                    interlocking_success, interlocking_message, attempts, response_time_ms = interlocking_api.validate_station_10()
+                                    interlocking_success, interlocking_message, response_data, attempts, response_time_ms = interlocking_api.validate_station_10()
 
                                     if not interlocking_success:
                                         safe_insert(f"❌ INTERLOCKING API Error después de {attempts} intentos (último tiempo: {response_time_ms} ms): {interlocking_message}\n", "red")
@@ -1512,7 +1512,7 @@ def worker(conn, addr):
                                         except Exception as e:
                                             safe_insert(f"Error enviando: {e}", "red")
                                         
-                                        conexionBitacora.event("LAS-002", f"|Command received| {comando_completo} - INTERLOCKING API Error después de {attempts} intentos (tiempo: {response_time_ms} ms)", month, day)
+                                        conexionBitacora.event("LAS-002", f"|Command received| {comando_completo} - INTERLOCKING API Error después de {attempts} intentos (tiempo: {response_time_ms} ms)\nResponse:{response_data,}", month, day)
                                         conexionBitacora.event("CMD-F001", "|Command,FAILED|", month, day)
                                         
                                         green_label.configure(image=image_green)
@@ -1521,7 +1521,7 @@ def worker(conn, addr):
                                         pieza = ""
                                         break
                                     else:
-                                        safe_insert(f"✅ INTERLOCKING validation PASSED (después de {attempts} intento(s), tiempo respuesta: {response_time_ms} ms)\n", "green")
+                                        safe_insert(f"✅ INTERLOCKING validation PASSED (después de {attempts} intento(s), tiempo respuesta: {response_time_ms} ms)\n{response_data,}", "green")
                     
                                         resultado, mensaje = procesar_registros.procesar_primer_registro()
                                         serial_passed = f"{serial}, PASSED"

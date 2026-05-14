@@ -22,7 +22,7 @@ def interlocking_station_10():
     
     for x in programas:
         unit_information.append({
-            "name": "Laser program name + version",
+            "name": "Laser program number + version",
             "value": x[2]
         })
     interlocking_station10 = {
@@ -60,7 +60,7 @@ def interlocking_station(serial_number):
     try:
         for x in programas:
             unit_information.append({
-                "name": "Perfilometer program name + version",
+                "name": "Perfilometer program number + version",
                 "value": x[2]
             })
     except Exception as e:
@@ -126,6 +126,43 @@ def interlocking_station(serial_number):
                         "value": y[2]
                     }
                 )
+            elif y[1] == '':
+                if y[0] == "Force":
+                    unit_information.append(                    
+                        {
+                            "name": y[0]+" limits",
+                            "value": y[3]
+                        }
+                    )
+                elif y[0]=="Pin":
+                    unit_information.append(                    
+                        {
+                            "name": y[0]+" height limits",
+                            "value": y[3]
+                        }
+                    )
+                elif y[0] == "Speed":
+                    unit_information.append(                    
+                        {
+                            "name": y[0]+" limits",
+                            "value": y[3]
+                        }
+                    )
+                else:
+                    unit_information.extend([
+                        {
+                            "name": y[0]+" limits",
+                            "value": y[3]
+                        },
+                        {
+                            "name": y[0]+" height limits",
+                            "value": y[2]
+                        },
+                        {
+                            "name": y[0]+" Upper limit",
+                            "value": y[2]
+                        }
+                    ])
 
     except Exception as e:
         print(f"Error no hay atributos cargados: {e}")
@@ -146,5 +183,5 @@ def interlocking_station(serial_number):
     # print(json.dumps(interlocking_station, indent=4))
     return interlocking_station
 
-# interlocking_station("P210211-01-C:SAN")
+# interlocking_station("P2170207-00-E:SE4A2612000000")
 # interlocking_station_10()

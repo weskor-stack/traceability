@@ -202,10 +202,10 @@ def validate_piece(serial_number, max_retries=None, retry_delay=None):
     
     if success:
         logging.info(f"✓ INTERLOCKING validation PASSED for {serial_number} (intentos: {attempts}, tiempo: {response_time_ms} ms)")
-        return True, message, attempts, response_time_ms
+        return True, message, response_data, attempts, response_time_ms
     else:
         logging.error(f"✗ INTERLOCKING validation FAILED for {serial_number} después de {attempts} intentos: {message} (tiempo último intento: {response_time_ms} ms)")
-        return False, message, attempts, response_time_ms
+        return False, message, response_data, attempts, response_time_ms
 
 def validate_station_10(max_retries=None, retry_delay=None):
     """
@@ -223,8 +223,8 @@ def validate_station_10(max_retries=None, retry_delay=None):
     )
     
     if success:
-        logging.info(f"✓ INTERLOCKING Station 10 validation PASSED (intentos: {attempts}, tiempo: {response_time_ms} ms)")
-        return True, message, attempts, response_time_ms
+        logging.info(f"✓ INTERLOCKING Station 10 validation PASSED (intentos: {attempts}, tiempo: {response_time_ms} ms)\nresponse_data:{response_data}")
+        return True, message, response_data, attempts, response_time_ms
     else:
         logging.error(f"✗ INTERLOCKING Station 10 validation FAILED después de {attempts} intentos: {message} (tiempo último intento: {response_time_ms} ms)")
-        return False, message, attempts, response_time_ms
+        return False, message, response_data, attempts, response_time_ms

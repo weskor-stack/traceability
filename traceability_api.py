@@ -136,7 +136,7 @@ def call_traceability_api_with_retry(serial_number, station_type, max_retries=No
                 
                 if is_valid:
                     logging.info(f"✅ API TRACEABILITY exitosa en intento {attempt} para {call_description} - Tiempo: {response_time_ms} ms")
-                    return True, "API call successful", response_data, response.status_code, attempts, response_time_ms
+                    return True, {json.dumps(response_data, indent=2, ensure_ascii=False) if response_data else 'No data'}, response_data, response.status_code, attempts, response_time_ms
                 else:
                     error_msg = "API returned invalid status"
                     logging.warning(f"{error_msg} para {call_description} - Tiempo: {response_time_ms} ms")
