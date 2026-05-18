@@ -148,6 +148,20 @@ def interlocking_station(serial_number):
                             "value": y[3]
                         }
                     )
+                elif y[0] == "Power":
+                    unit_information.append(                    
+                        {
+                            "name": y[0]+" limits",
+                            "value": y[3]
+                        }
+                    )
+                elif y[0] == "Time":
+                    unit_information.append(                    
+                        {
+                            "name": y[0],
+                            "value": y[3]
+                        }
+                    )
                 else:
                     unit_information.extend([
                         {

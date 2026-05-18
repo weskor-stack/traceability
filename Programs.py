@@ -216,9 +216,9 @@ class VentanaPrograma:
         tk.Button(btn_frame, text="💾 Guardar", font=FONT_BTN, bg=BTN_GREEN, fg="white", relief="flat", cursor="hand2", padx=20, pady=6, command=self.guardar).pack(pady=10)
 
     def guardar(self):
-        if not self.name.get().strip():
-            messagebox.showwarning("Incompleto", "El nombre del programa es obligatorio.")
-            return
+        # if not self.name.get().strip():
+        #     messagebox.showwarning("Incompleto", "El nombre del programa es obligatorio.")
+        #     return
 
         descripcion = self.desc_text.get("1.0", "end").strip()
         datos = {

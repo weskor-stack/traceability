@@ -273,10 +273,10 @@ class VentanaFormulario:
         entry.pack(fill="x", ipady=4, pady=(2, 10))
 
     def guardar(self):
-        # Validar campos vacíos (incluyendo time)
-        if not all([self.nombre.get(), self.lower.get(), self.upper.get(), self.value.get(), self.time.get()]):
-            messagebox.showwarning("Incompleto", "Por favor, llene los campos principales.")
-            return
+        # # Validar campos vacíos (incluyendo time)
+        # if not all([self.nombre.get(), self.lower.get(), self.upper.get(), self.value.get(), self.time.get()]):
+        #     messagebox.showwarning("Incompleto", "Por favor, llene los campos principales.")
+        #     return
 
         datos = {
             "name":                self.nombre.get(),
