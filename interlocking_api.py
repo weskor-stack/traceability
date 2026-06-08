@@ -43,7 +43,7 @@ def call_interlocking_api_with_retry(serial_number=None, is_station_10=False, ma
         retry_delay (int, optional): Segundos entre reintentos
     
     Returns:
-        tuple: (success, message, response_data, status_code, attempts, response_time_ms)
+        tuple: (success, message, response_data, status_code, attempts, response_time_ms, json_data)
     """
     max_retries = max_retries if max_retries is not None else MAX_RETRIES
     retry_delay = retry_delay if retry_delay is not None else RETRY_DELAY
@@ -127,7 +127,7 @@ def call_interlocking_api_with_retry(serial_number=None, is_station_10=False, ma
                 
                 if is_valid:
                     logging.info(f"✅ API INTERLOCKING exitosa en intento {attempt} para {call_description} - Tiempo: {response_time_ms} ms")
-                    return True, "API call successful", response_data, response.status_code, attempts, response_time_ms
+                    return True, "API call successful", response_data, response.status_code, attempts, response_time_ms, json_data
                 else:
                     error_msg = "API returned invalid status"
                     logging.warning(f"{error_msg} para {call_description} - Tiempo: {response_time_ms} ms")
@@ -178,7 +178,7 @@ def call_interlocking_api_with_retry(serial_number=None, is_station_10=False, ma
     
     final_error = f"Todos los {max_retries} intentos fallaron. Último error: {last_error}"
     logging.error(final_error)
-    return False, final_error, None, None, attempts, 0
+    return False, final_error, None, None, attempts, 0, json_data
 
 def validate_piece(serial_number, max_retries=None, retry_delay=None):
     """
@@ -193,7 +193,7 @@ def validate_piece(serial_number, max_retries=None, retry_delay=None):
     Returns:
         tuple: (is_valid, message, attempts, response_time_ms)
     """
-    success, message, response_data, status_code, attempts, response_time_ms = call_interlocking_api_with_retry(
+    success, message, response_data, status_code, attempts, response_time_ms, json_data = call_interlocking_api_with_retry(
         serial_number=serial_number,
         is_station_10=False,
         max_retries=max_retries,
@@ -202,10 +202,10 @@ def validate_piece(serial_number, max_retries=None, retry_delay=None):
     
     if success:
         logging.info(f"✓ INTERLOCKING validation PASSED for {serial_number} (intentos: {attempts}, tiempo: {response_time_ms} ms)")
-        return True, message, response_data, attempts, response_time_ms
+        return True, message, response_data, attempts, response_time_ms, json_data
     else:
         logging.error(f"✗ INTERLOCKING validation FAILED for {serial_number} después de {attempts} intentos: {message} (tiempo último intento: {response_time_ms} ms)")
-        return False, message, response_data, attempts, response_time_ms
+        return False, message, response_data, attempts, response_time_ms, json_data
 
 def validate_station_10(max_retries=None, retry_delay=None):
     """
@@ -215,7 +215,7 @@ def validate_station_10(max_retries=None, retry_delay=None):
     Returns:
         tuple: (is_valid, message, attempts, response_time_ms)
     """
-    success, message, response_data, status_code, attempts, response_time_ms = call_interlocking_api_with_retry(
+    success, message, response_data, status_code, attempts, response_time_ms, json_data = call_interlocking_api_with_retry(
         serial_number=None,
         is_station_10=True,
         max_retries=max_retries,
@@ -224,7 +224,7 @@ def validate_station_10(max_retries=None, retry_delay=None):
     
     if success:
         logging.info(f"✓ INTERLOCKING Station 10 validation PASSED (intentos: {attempts}, tiempo: {response_time_ms} ms)\nresponse_data:{response_data}")
-        return True, message, response_data, attempts, response_time_ms
+        return True, message, response_data, attempts, response_time_ms, json_data
     else:
         logging.error(f"✗ INTERLOCKING Station 10 validation FAILED después de {attempts} intentos: {message} (tiempo último intento: {response_time_ms} ms)")
-        return False, message, response_data, attempts, response_time_ms
+        return False, message, response_data, attempts, response_time_ms, json_data

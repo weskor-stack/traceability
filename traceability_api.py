@@ -136,7 +136,7 @@ def call_traceability_api_with_retry(serial_number, station_type, max_retries=No
                 
                 if is_valid:
                     logging.info(f"✅ API TRACEABILITY exitosa en intento {attempt} para {call_description} - Tiempo: {response_time_ms} ms")
-                    return True, {json.dumps(response_data, indent=2, ensure_ascii=False) if response_data else 'No data'}, response_data, response.status_code, attempts, response_time_ms
+                    return True, {json.dumps(response_data, indent=2, ensure_ascii=False) if response_data else 'No data'}, response_data, response.status_code, attempts, response_time_ms, json_data
                 else:
                     error_msg = "API returned invalid status"
                     logging.warning(f"{error_msg} para {call_description} - Tiempo: {response_time_ms} ms")
@@ -187,7 +187,7 @@ def call_traceability_api_with_retry(serial_number, station_type, max_retries=No
     
     final_error = f"Todos los {max_retries} intentos fallaron. Último error: {last_error}"
     logging.error(final_error)
-    return False, final_error, None, None, attempts, 0
+    return False, final_error, None, None, attempts, 0, json_data
 
 def send_traceability_data(serial_number, station_type, max_retries=None, retry_delay=None):
     """
@@ -202,7 +202,7 @@ def send_traceability_data(serial_number, station_type, max_retries=None, retry_
     Returns:
         tuple: (is_valid, message, attempts, response_time_ms)
     """
-    success, message, response_data, status_code, attempts, response_time_ms = call_traceability_api_with_retry(
+    success, message, response_data, status_code, attempts, response_time_ms, json_data = call_traceability_api_with_retry(
         serial_number=serial_number,
         station_type=station_type,
         max_retries=max_retries,
@@ -211,7 +211,7 @@ def send_traceability_data(serial_number, station_type, max_retries=None, retry_
     
     if success:
         logging.info(f"✓ TRACEABILITY data sent successfully for {serial_number} (estación: {station_type}, intentos: {attempts}, tiempo: {response_time_ms} ms)")
-        return True, message, attempts, response_time_ms
+        return True, message, attempts, response_time_ms, json_data
     else:
         logging.error(f"✗ TRACEABILITY data send FAILED for {serial_number} después de {attempts} intentos: {message}")
-        return False, message, attempts, response_time_ms
+        return False, message, attempts, response_time_ms, json_data
