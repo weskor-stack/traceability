@@ -780,7 +780,6 @@ def worker(conn, addr):
                                             # Enviar FAILED al PLC
                                             try:
                                                 conn.send("FAILED".encode('UTF-8'))
-                                                # conn.send("INTERLOCKING validation failed".encode('UTF-8'))
                                             except Exception as e:
                                                 safe_insert(f"Error enviando: {e}", "red")
                                                 logging.error(f"Error enviando: {e}")
@@ -928,7 +927,6 @@ def worker(conn, addr):
                                     # Enviar FAILED al PLC
                                     try:
                                         conn.send("FAILED".encode('UTF-8'))
-                                        # conn.send("INTERLOCKING validation failed".encode('UTF-8'))
                                     except Exception as e:
                                         safe_insert(f"Error enviando: {e}", "red")
                                         logging.error(f"Error enviando: {e}")
@@ -941,7 +939,7 @@ def worker(conn, addr):
                                     )
                                     conexionBitacora.event("CMD-F001", "|Command,FAILED|", month, day)
                                             
-                                    safe_insert(f"Command received-> {cadena} part: {name_piece}\nCommand FAILED - INTERLOCKING validation failed\n Response:{json.dumps(response_data, indent=4, ensure_ascii=False)}\n❌ INTERLOCKING validation FAILED after {attempts} intentos (último tiempo: {response_time_ms} ms):\nJSON:\n {json.dumps(json_data, indent=4, ensure_ascii=False)}\nMessage:{interlocking_message}\nResponse:{json.dumps(response_data, indent=4, ensure_ascii=False)}", "red")
+                                    safe_insert(f"Command received-> {cadena} part: {name_piece}\nCommand FAILED - ❌ INTERLOCKING validation FAILED after {attempts} intentos (Time: {response_time_ms} ms):\nJSON:\n {json.dumps(json_data, indent=4, ensure_ascii=False)}\nMessage:{interlocking_message}\nResponse:{json.dumps(response_data, indent=4, ensure_ascii=False)}", "red")
                                     logging.warning(f"Command received-> {cadena} part: {name_piece} - Command FAILED")
                                         
                                     green_label.configure(image=image_green)

@@ -178,7 +178,7 @@ def call_interlocking_api_with_retry(serial_number=None, is_station_10=False, ma
     
     final_error = f"Todos los {max_retries} intentos fallaron. Último error: {last_error}"
     logging.error(final_error)
-    return False, final_error, None, None, attempts, 0, json_data
+    return False, final_error, response_data, response.status_code, attempts, 0, json_data
 
 def validate_piece(serial_number, max_retries=None, retry_delay=None):
     """
