@@ -190,7 +190,7 @@ def call_traceability_api_with_retry(serial_number, station_type, max_retries=No
     try:
         return False, final_error, response_data, response.status_code, attempts, 0, json_data
     except:
-        return False, final_error, "Please check the connection between the 'endpoints', as communication cannot be established.", None, attempts, 0, json_data
+        return False, final_error, "Please check the connection between the 'endpoints', as communication cannot be established.", None, attempts, 0, None
 
 def send_traceability_data(serial_number, station_type, max_retries=None, retry_delay=None):
     """
