@@ -1110,6 +1110,7 @@ def worker(conn, addr):
                                     configurador = conexion.configurador()
                                     multiplo = conexion.multiplo_series()
                                     if multiplo == 'multiplo':
+                                        urls = conexion.get_urls()
                                         for name, url in urls.items():
                                             if 'TRACEABILITY' in name.upper():
                                                 logging.info(f"URL de TRACEABILITY encontrada: {name} -> {url}")
