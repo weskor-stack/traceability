@@ -1529,7 +1529,8 @@ def worker(conn, addr):
                                 red_label.configure(image=image_red_full)
                             else:
                                 part_number, serial_number, process_name = leer_shop_order.leer_archivo_generado() 
-                                serial = conexion.get_part_numbers(serial_number)
+                                # serial = conexion.get_part_numbers(serial_number)
+                                serial = serial_number
                                 if serial != "PASSED":
                                     safe_insert("🔄 Validating with INTERLOCKING API...\n", "blue")
                                     logging.info("Llamando a API INTERLOCKING")
@@ -1540,7 +1541,7 @@ def worker(conn, addr):
                                         safe_insert(f"❌ INTERLOCKING API Error after {attempts} intentos (último tiempo: {response_time_ms} ms)\nJSON:\n{json.dumps(json_data, indent=4, ensure_ascii=False)}\nMessage:\n{interlocking_message}\n", "red")
                                         logging.error(f"INTERLOCKING API Error after {attempts} intentos (tiempo: {response_time_ms} ms): {interlocking_message}")
                                         
-                                        serial = conexion.return_part_serial_number(serial_number)
+                                        # serial = conexion.return_part_serial_number(serial_number)
                                         try:
                                             conn.send("FAILED".encode('UTF-8'))
                                         except Exception as e:
