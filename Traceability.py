@@ -1314,6 +1314,162 @@ def worker(conn, addr):
                         elif os.name == 'posix':
                             # For Unix/Linux/Mac operating systems
                             os.system('sudo shutdown now')
+
+                    case "hold":
+                        success_json = ""
+                        part_number = ""
+                        long_workstation = ""
+                        process_name = ""
+                        comment_text = ""
+                        pantalla_completa = ""
+
+                        if len(option) == 3 and option[-1] == '1/':
+                            entry_piece.configure(state=ctk.NORMAL, textvariable=piece_name)
+                            # safe_insert("You can scan the part.", "green")
+
+                            green_label.configure(image=image_green_full)
+                            red_label.configure(image=image_red)
+
+                            name_piece =option[1]
+                            piece_name.set(name_piece)
+                            try:
+                                urls = conexion.obtener_urls()
+                                url_api_hold = urls.get('HOLD', None)
+                                if url_api_hold is None:
+                                    safe_insert("The HOLD URL was not found in the database. Please check your settings.", "red")
+                                    logging.error("The HOLD URL was not found in the database. Please check your settings.")
+                                    conn.send("FAILED".encode('UTF-8'))
+                                    conexionBitacora.event("HOLD-002","|Command received| "+comando_completo+" part: "+name_piece,month,day)
+                                    conexionBitacora.event("CMD-F002","|Command,FAILED|",month,day)
+
+                                    green_label.configure(image=image_green)
+                                    red_label.configure(image=image_red_full)
+                                else: 
+                                    safe_insert(f"📡 Calling HOLD API: {name_piece}", "blue")
+                                    url_hold = url_api_hold.replace("partNumber=LFTA-2170207-00-E", f"partNumber={name_piece}")
+
+                                    try:
+                                        response_hold = requests.get(url_hold, timeout=30)
+                                    except requests.exceptions.RequestException as e:
+                                        safe_insert(f"Error calling HOLD API: {e}", "red")
+                                        logging.error(f"Error calling HOLD API: {e}")
+                                        conn.send("FAILED".encode('UTF-8'))
+                                        conexionBitacora.event("HOLD-002","|Command received| "+comando_completo+" part: "+name_piece,month,day)
+                                        conexionBitacora.event("CMD-F002","|Command,FAILED|",month,day)
+
+                                        green_label.configure(image=image_green)
+                                        red_label.configure(image=image_red_full)
+                                        break
+
+                                    if response_hold.status_code != 200:
+                                        safe_insert(f"Error: HOLD API returned status code {response_hold.status_code}", "red")
+                                        logging.error(f"Error: HOLD API returned status code {response_hold.status_code}")
+                                        conn.send("FAILED".encode('UTF-8'))
+                                        conexionBitacora.event("HOLD-002","|Command received| "+comando_completo+" part: "+name_piece,month,day)
+                                        conexionBitacora.event("CMD-F002","|Command,FAILED|",month,day)
+
+                                        green_label.configure(image=image_green)
+                                        red_label.configure(image=image_red_full)
+                                        break
+
+                                    data_hold = response_hold.json()
+                                    # logging.info(f"HOLD API response: {json.dumps(data_hold, indent=4)}")
+                                    json_completo = json.dumps(data_hold, indent=4)
+                                    
+                                    data = data_hold.get("data")
+
+                                    if isinstance(data, list):
+                                        success_json = data_hold.get("success","")
+                                        data_hold = data_hold.get("data", [])
+                                        logging.info("Data from HOLD API is a list")
+                                        if len(data_hold) > 0:
+                                            part_number = data_hold[0].get("part_number","")
+                                            long_workstation = data_hold[0].get("long_workstation","")
+                                            process_name = data_hold[0].get("process_name","")
+                                            comment_text = data_hold[0].get("comment_text","")
+                                            logging.info(f"Success: {success_json}, Part Number: {part_number}, Long Workstation: {long_workstation}, Process Name: {process_name}, Comment Text: {comment_text}")
+                                        else:
+                                            logging.warning("Data from HOLD API is an empty list")
+                                            part_number = ""
+                                            long_workstation = ""
+                                            process_name = ""
+                                            comment_text = ""
+                                    elif isinstance(data, dict):
+                                        success_json = data_hold.get("success","")
+                                        logging.info("Data from HOLD API is a dictionary")
+                                        data_hold = data_hold.get("data", {})
+                                        if data_hold:
+                                            part_number = data_hold.get("part_number","")
+                                            long_workstation = data_hold.get("long_workstation","")
+                                            process_name = data_hold.get("process_name","")
+                                            comment_text = data_hold.get("comment_text","")
+                                            logging.info(f"Success: {success_json}, Part Number: {part_number}, Long Workstation: {long_workstation}, Process Name: {process_name}, Comment Text: {comment_text}")
+                                        else:
+                                            logging.warning("Data from HOLD API is an empty dictionary")
+                                            part_number = ""
+                                            long_workstation = ""
+                                            process_name = ""
+                                            comment_text = ""
+
+                                    
+                                    if success_json == "true":
+                                        pantalla_completa = (
+                                            f"Command received-> {comando_completo} part: {name_piece}\nCommand HOLD PASSED\n"
+                                            f"[API URL] : {url_hold}\n"
+                                            f"[API Response] : {json_completo}\n"
+                                            f"[SUCCESS] : {success_json}\n"
+                                            f"[PART NUMBER] : {part_number}\n"
+                                            f"[LONG WORKSTATION] : {long_workstation}\n"
+                                            f"[PROCESS NAME] : {process_name}\n"
+                                            f"[COMMENT TEXT] : {comment_text}\n"
+                                        )
+                                        safe_insert(pantalla_completa, "green")
+                                        try:
+                                            conn.send("PASSED".encode('UTF-8'))
+                                        except Exception as e:
+                                            safe_insert(f"Error enviando: {e}", "red")
+                                        conexionBitacora.event("HOLD-001","|Command received| "+comando_completo+" part: "+name_piece,month,day)
+                                        conexionBitacora.event("CMD-P001","|Command,PASSED|",month,day)
+
+                                        green_label.configure(image=image_green_full)
+                                        red_label.configure(image=image_red)
+                                    else:
+                                        pantalla_completa = (
+                                            f"Command received-> {comando_completo} part: {name_piece}\nCommand HOLD FAILED\n"
+                                            f"[API URL] : {url_hold}\n"
+                                            f"[API Response] : {json_completo}\n"
+                                            f"[SUCCESS] : {success_json}\n"
+                                            f"[PART NUMBER] : {part_number}\n"
+                                            f"[LONG WORKSTATION] : {long_workstation}\n"
+                                            f"[PROCESS NAME] : {process_name}\n"
+                                            f"[COMMENT TEXT] : {comment_text}\n"
+                                        )
+                                        safe_insert(pantalla_completa, "red")
+                                        try:
+                                            conn.send("FAILED".encode('UTF-8'))
+                                        except Exception as e:
+                                            safe_insert(f"Error enviando: {e}", "red")
+                                        conexionBitacora.event("HOLD-002","|Command received| "+comando_completo+" part: "+name_piece,month,day)
+                                        conexionBitacora.event("CMD-F002","|Command,FAILED|",month,day)
+
+                                        green_label.configure(image=image_green)
+                                        red_label.configure(image=image_red_full)
+                                
+                            except Exception as e:
+                                safe_insert(f"Error retrieving URL: {e}", "red")
+                                logging.error(f"Error retrieving URL: {e}")
+                                break
+                        else:
+                            safe_insert(f"Command received-> {comando_completo}\nCommand FAILED\n", "red")
+                            try:
+                                conn.send("FAILED".encode('UTF-8'))
+                            except Exception as e:
+                                safe_insert(f"Error enviando: {e}", "red")
+                            conexionBitacora.event("HOLD-002","|Command received| "+comando_completo,month,day)
+                            conexionBitacora.event("CMD-F002","|Command,FAILED|",month,day)
+
+                            green_label.configure(image=image_green)
+                            red_label.configure(image=image_red_full)
                     case "Component":
                         pieza_padre = piece_name.get()
                         entry_piece.focus_set()

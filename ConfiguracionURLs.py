@@ -21,6 +21,7 @@ class FormularioApiConfig:
             "TRACEABILITY",
         ]
         self.API_SHOP_ORDER = "SHOP ORDER"
+        self.API_hold = "HOLD"
 
         self.entries = {}
         self.station = self._leer_estacion()
@@ -42,7 +43,7 @@ class FormularioApiConfig:
         if self.station.startswith("ST10"):
             return [self.API_SHOP_ORDER] + self.APIS_BASE
         else:
-            return self.APIS_BASE
+            return self.APIS_BASE + [self.API_hold]
 
     def _setup_ui(self):
         apis = self._apis_para_estacion()

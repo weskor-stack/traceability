@@ -270,6 +270,17 @@ def obtener_url_api():
         return res[0] if res else None
     except:
         return None
+
+def obtener_urls():
+    """Busca las URLs en la tabla url_data"""
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT name, url_data FROM url_data")
+        res = cursor.fetchall()
+        cursor.close()
+        return {row[0]: row[1] for row in res} if res else None
+    except:
+        return None
     
 def insert_attribute(name, unit, upper, lower, value, create_registration):
     cursor = conn.cursor()
