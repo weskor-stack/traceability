@@ -1422,16 +1422,16 @@ def worker(conn, addr):
                                             f"[PROCESS NAME] : {process_name}\n"
                                             f"[COMMENT TEXT] : {comment_text}\n"
                                         )
-                                        safe_insert(pantalla_completa, "green")
+                                        safe_insert(pantalla_completa, "red")
                                         try:
-                                            conn.send("PASSED".encode('UTF-8'))
+                                            conn.send("FAILED".encode('UTF-8'))
                                         except Exception as e:
                                             safe_insert(f"Error enviando: {e}", "red")
-                                        conexionBitacora.event("HOLD-001","|Command received| "+comando_completo+" part: "+name_piece,month,day)
-                                        conexionBitacora.event("CMD-P001","|Command,PASSED|",month,day)
+                                        conexionBitacora.event("HOLD-002","|Command received| "+comando_completo+" part: "+name_piece,month,day)
+                                        conexionBitacora.event("CMD-F002","|Command,FAILED|",month,day)
 
-                                        green_label.configure(image=image_green_full)
-                                        red_label.configure(image=image_red)
+                                        green_label.configure(image=image_green)
+                                        red_label.configure(image=image_red_full)
                                     else:
                                         pantalla_completa = (
                                             f"Command received-> {comando_completo} part: {name_piece}\nCommand HOLD FAILED\n"
@@ -1443,16 +1443,16 @@ def worker(conn, addr):
                                             f"[PROCESS NAME] : {process_name}\n"
                                             f"[COMMENT TEXT] : {comment_text}\n"
                                         )
-                                        safe_insert(pantalla_completa, "red")
+                                        safe_insert(pantalla_completa, "green")
                                         try:
-                                            conn.send("FAILED".encode('UTF-8'))
+                                            conn.send("PASSED".encode('UTF-8'))
                                         except Exception as e:
                                             safe_insert(f"Error enviando: {e}", "red")
-                                        conexionBitacora.event("HOLD-002","|Command received| "+comando_completo+" part: "+name_piece,month,day)
-                                        conexionBitacora.event("CMD-F002","|Command,FAILED|",month,day)
+                                        conexionBitacora.event("HOLD-001","|Command received| "+comando_completo+" part: "+name_piece,month,day)
+                                        conexionBitacora.event("CMD-P001","|Command,PASSED|",month,day)
 
-                                        green_label.configure(image=image_green)
-                                        red_label.configure(image=image_red_full)
+                                        green_label.configure(image=image_green_full)
+                                        red_label.configure(image=image_red)
                                 
                             except Exception as e:
                                 safe_insert(f"Error retrieving URL: {e}", "red")
