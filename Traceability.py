@@ -1373,7 +1373,7 @@ def worker(conn, addr):
                                         break
 
                                     data_hold = response_hold.json()
-                                    # logging.info(f"HOLD API response: {json.dumps(data_hold, indent=4)}")
+                                    logging.info(f"HOLD API response: {json.dumps(data_hold, indent=4)}")
                                     json_completo = json.dumps(data_hold, indent=4)
                                     
                                     data = data_hold.get("data")
