@@ -1411,8 +1411,7 @@ def worker(conn, addr):
                                             process_name = ""
                                             comment_text = ""
 
-                                    
-                                    if success_json == "true":
+                                    if data_hold:
                                         pantalla_completa = (
                                             f"Command received-> {comando_completo} part: {name_piece}\nCommand HOLD PASSED\n"
                                             f"[API URL] : {url_hold}\n"
