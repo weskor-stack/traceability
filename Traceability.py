@@ -726,11 +726,11 @@ def worker(conn, addr):
                                         if "ST10" == estacion:
                                             # Estación 10 - Usar estructura específica de Laser
                                             safe_insert(f"📍 Station {estacion} detected - Using ST10 structure\n", "blue")
-                                            interlocking_success, interlocking_message, attempts, response_time_ms  = interlocking_api.validate_station_10()
+                                            interlocking_success, interlocking_message, response_data, attempts, response_time_ms, json_data, succes_data  = interlocking_api.validate_station_10()
                                         else:
                                             # Otras estaciones - Usar estructura genérica
                                             safe_insert(f"📍 Station {estacion} detected - Using generic structure\n", "blue")
-                                            interlocking_success, interlocking_message, attempts, response_time_ms  = interlocking_api.validate_piece(name_piece)
+                                            interlocking_success, interlocking_message,response_data, attempts, response_time_ms, json_data, succes_data  = interlocking_api.validate_piece(name_piece)
 
                                         if interlocking_success:
                                             safe_insert(f"✅ INTERLOCKING validation PASSED (after {attempts} attempt(s)): {interlocking_message}\n", "green")
@@ -873,11 +873,11 @@ def worker(conn, addr):
                                 if "ST10" == estacion:
                                     # Estación 10 - Usar estructura específica de Laser
                                     safe_insert(f"📍 Station {estacion} detected - Using ST10 structure\n", "blue")
-                                    interlocking_success, interlocking_message, response_data, attempts, response_time_ms, json_data = interlocking_api.validate_station_10()
+                                    interlocking_success, interlocking_message, response_data, attempts, response_time_ms, json_data, succes_data = interlocking_api.validate_station_10()
                                 else:
                                     # Otras estaciones - Usar estructura genérica
                                     safe_insert(f"📍 Station {estacion} detected - Using generic structure\n", "blue")
-                                    interlocking_success, interlocking_message, response_data, attempts, response_time_ms, json_data  = interlocking_api.validate_piece(name_piece)
+                                    interlocking_success, interlocking_message, response_data, attempts, response_time_ms, json_data, succes_data  = interlocking_api.validate_piece(name_piece)
 
                                 if interlocking_success:
                                     safe_insert(f"✅ INTERLOCKING validation PASSED (after {attempts} attempt(s)):\nJSON:\n{json_data}\nMessage:{interlocking_message}\n Response:{response_data}\n", "green")
@@ -984,7 +984,90 @@ def worker(conn, addr):
                             red_label.configure(image=image_red_full)
 
                             cadena = ""
-                    
+
+                    case "interlocking":
+                        clear_table_data()
+                        if len(option) == 4 and option[-1] == "1/":
+                            pcb = option[1]
+                            cover = option[2]
+
+                            safe_insert(f"🔄 Validating with INTERLOCKING API for part: {pcb}...\n", "blue")
+                            logging.info(f"🔄 Validating with INTERLOCKING API for part: {pcb}...\n")
+                            interlocking_success, interlocking_message, response_data, attempts, response_time_ms, json_data, succes_data  = interlocking_api.validate_piece(pcb)
+
+                            print(succes_data)
+
+                            if succes_data == "true":
+                                pantalla_final = (f"Command received-> {comando_completo} part: {pcb}\nCommand PASSED\n✅ INTERLOCKING validation PASSED (after {attempts} attempt(s)):\nJSON:\n {json.dumps(json_data, indent=4, ensure_ascii=False)}\nMessage: {interlocking_message}\nResponse:{json.dumps(response_data, indent=4, ensure_ascii=False)}\n"
+                                    f"✅ INTERLOCKING validation PASSED (after {attempts} attempt(s)):\nJSON:\n{json.dumps(json_data, indent=4)}\nMessage:{interlocking_message}\n Response:{json.dumps(response_data, indent=4)}\n")
+                                safe_insert(pantalla_final, "green")
+                                logging.info(pantalla_final)
+                                conexionBitacora.event("ILK-001", f"INTERLOCKING validation PASSED for ISN: {pcb} (intentos: {attempts}, tiempo: {response_time_ms} ms)", month, day)   
+                                piece = pcb + ", PASSED"
+
+                                conexion.component_store(pcb, "", cover)
+                                # Registrar en bitácora
+                                conexionBitacora.event(
+                                    "SPP-001",
+                                    f"|Command received| {comando_completo} part: {pcb} - Route check passed - INTERLOCKING: OK (intentos: {attempts}, tiempo: {response_time_ms} ms)",
+                                    month, day
+                                )
+                                conexionBitacora.event(
+                                    "CHKROUTE-001",
+                                    f"Route check passed for ISN: {comando_completo} - INTERLOCKING validated (intentos: {attempts}, tiempo: {response_time_ms} ms)",
+                                    month, day
+                                )
+                                conexionBitacora.event("CMD-P001", "|Command,PASSED|", month, day)
+
+                                try: 
+                                    conn.send(piece.encode('UTF-8'))
+                                except Exception as e:
+                                    conn.send("FAILED".encode('UTF-8'))
+                                    conexionBitacora.event(
+                                        "INT-002",
+                                        f"|Command received| {comando_completo} part: {pcb} Error: {e}",
+                                        month, day
+                                    )
+                                    conexionBitacora.event("CMD-P002", "|Command,FAILED|", month, day)
+                                    safe_insert(f"|Command received| {comando_completo} part: {pcb} Error: {e}", "red")
+                                    logging.info(f"Command received-> {comando_completo} part: {pcb} Error: {e}\n Command FAILED")
+                                    green_label.configure(image=image_green)
+                                    red_label.configure(image=image_red_full)
+
+                                green_label.configure(image=image_green_full)
+                                red_label.configure(image=image_red)
+
+                            else:
+                                pantalla_final = (f"Command received-> {comando_completo} part: {pcb}\nCommand FAILED - ❌ INTERLOCKING validation FAILED after {attempts} intentos (Time: {response_time_ms} ms):\nJSON:\n {json.dumps(json_data, indent=4, ensure_ascii=False)}\nMessage:{interlocking_message}\nResponse:{json.dumps(response_data, indent=4, ensure_ascii=False)}"
+                                                f"❌ INTERLOCKING validation FAILED after {attempts} intentos (último tiempo: {response_time_ms} ms):\nJSON:\n {json.dumps(json_data, indent=4, ensure_ascii=False)}\nMessage:{interlocking_message}\nResponse:{json.dumps(response_data, indent=4, ensure_ascii=False)}")
+                                    
+                                # Registrar fallo en bitácora con tiempo
+                                conexionBitacora.event("ILK-002", f"INTERLOCKING validation FAILED for ISN: {pcb})", month, day)
+                                # Enviar FAILED al PLC
+                                try:
+                                    conn.send("FAILED".encode('UTF-8'))
+                                except Exception as e:
+                                    safe_insert(f"Error enviando: {e}", "red")
+                                    logging.error(f"Error enviando: {e}")
+                                    green_label.configure(image=image_green)
+                                    red_label.configure(image=image_red_full)
+                                    conexionBitacora.event( "SPP-002",f"Error: {e}", month, day)
+                                    
+                                # Registrar en bitácora el fallo
+                                conexionBitacora.event(
+                                    "SPP-002",
+                                    f"|Command received| {comando_completo} part: {pcb} - INTERLOCKING validation FAILED after {attempts} intentos (tiempo: {response_time_ms} ms)",
+                                    month, day
+                                )
+                                conexionBitacora.event("CMD-F001", "|Command,FAILED|", month, day)
+                                        
+                                safe_insert(pantalla_final, "red")
+                                logging.warning(pantalla_final)
+                                    
+                                green_label.configure(image=image_green)
+                                red_label.configure(image=image_red_full)
+
+                
                     case "reset":
                         for item in option:
                             cadena += str(item) + ","
@@ -1469,6 +1552,7 @@ def worker(conn, addr):
 
                             green_label.configure(image=image_green)
                             red_label.configure(image=image_red_full)
+
                     case "Component":
                         pieza_padre = piece_name.get()
                         entry_piece.focus_set()
