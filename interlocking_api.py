@@ -45,6 +45,7 @@ def call_interlocking_api_with_retry(serial_number=None, is_station_10=False, ma
     Returns:
         tuple: (success, message, response_data, status_code, attempts, response_time_ms, json_data)
     """
+    succes_data = ""
     max_retries = max_retries if max_retries is not None else MAX_RETRIES
     retry_delay = retry_delay if retry_delay is not None else RETRY_DELAY
     
@@ -124,10 +125,11 @@ def call_interlocking_api_with_retry(serial_number=None, is_station_10=False, ma
                         is_valid = False
                     elif response_data.get('success') is False:
                         is_valid = False
-                
+
+                succes_data = response_data.get('success')
                 if is_valid:
                     logging.info(f"✅ API INTERLOCKING exitosa en intento {attempt} para {call_description} - Tiempo: {response_time_ms} ms")
-                    return True, "API call successful", response_data, response.status_code, attempts, response_time_ms, json_data
+                    return True, "API call successful", response_data, response.status_code, attempts, response_time_ms, json_data, succes_data
                 else:
                     error_msg = "API returned invalid status"
                     logging.warning(f"{error_msg} para {call_description} - Tiempo: {response_time_ms} ms")
@@ -179,9 +181,9 @@ def call_interlocking_api_with_retry(serial_number=None, is_station_10=False, ma
     final_error = f"Todos los {max_retries} intentos fallaron. Último error: {last_error}"
     logging.error(final_error)
     try:
-        return False, final_error, response_data, response.status_code, attempts, 0, json_data
+        return False, final_error, response_data, response.status_code, attempts, 0, json_data, response_data, succes_data
     except:
-        return False, final_error, "Please check the connection between the 'endpoints', as communication cannot be established.", None, attempts, 0, None
+        return False, final_error, "Please check the connection between the 'endpoints', as communication cannot be established.", None, attempts, 0, None, succes_data
 
 def validate_piece(serial_number, max_retries=None, retry_delay=None):
     """
@@ -196,7 +198,7 @@ def validate_piece(serial_number, max_retries=None, retry_delay=None):
     Returns:
         tuple: (is_valid, message, attempts, response_time_ms)
     """
-    success, message, response_data, status_code, attempts, response_time_ms, json_data = call_interlocking_api_with_retry(
+    success, message, response_data, status_code, attempts, response_time_ms, json_data, succes_data = call_interlocking_api_with_retry(
         serial_number=serial_number,
         is_station_10=False,
         max_retries=max_retries,
@@ -205,10 +207,10 @@ def validate_piece(serial_number, max_retries=None, retry_delay=None):
     
     if success:
         logging.info(f"✓ INTERLOCKING validation PASSED for {serial_number} (intentos: {attempts}, tiempo: {response_time_ms} ms)")
-        return True, message, response_data, attempts, response_time_ms, json_data
+        return True, message, response_data, attempts, response_time_ms, json_data, succes_data
     else:
         logging.error(f"✗ INTERLOCKING validation FAILED for {serial_number} después de {attempts} intentos: {message} (tiempo último intento: {response_time_ms} ms)")
-        return False, message, response_data, attempts, response_time_ms, json_data
+        return False, message, response_data, attempts, response_time_ms, json_data, succes_data
 
 def validate_station_10(max_retries=None, retry_delay=None):
     """
@@ -218,7 +220,7 @@ def validate_station_10(max_retries=None, retry_delay=None):
     Returns:
         tuple: (is_valid, message, attempts, response_time_ms)
     """
-    success, message, response_data, status_code, attempts, response_time_ms, json_data = call_interlocking_api_with_retry(
+    success, message, response_data, status_code, attempts, response_time_ms, json_data, succes_data = call_interlocking_api_with_retry(
         serial_number=None,
         is_station_10=True,
         max_retries=max_retries,
@@ -227,7 +229,7 @@ def validate_station_10(max_retries=None, retry_delay=None):
     
     if success:
         logging.info(f"✓ INTERLOCKING Station 10 validation PASSED (intentos: {attempts}, tiempo: {response_time_ms} ms)\nresponse_data:{response_data}")
-        return True, message, response_data, attempts, response_time_ms, json_data
+        return True, message, response_data, attempts, response_time_ms, json_data, succes_data
     else:
         logging.error(f"✗ INTERLOCKING Station 10 validation FAILED después de {attempts} intentos: {message} (tiempo último intento: {response_time_ms} ms)")
-        return False, message, response_data, attempts, response_time_ms, json_data
+        return False, message, response_data, attempts, response_time_ms, json_data, succes_data
